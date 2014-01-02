@@ -16,8 +16,10 @@ typedef struct scheduler
 {
     coroutine* allcoroutines; 
     long nallcoroutines;
-
-    coroutine* shed_coro; 
+	
+	unsigned int stop;
+	
+    coroutine* main_coro; 
     coroutine* running_coro; 
 
     coro_tqh wait_sched_queue;
@@ -29,7 +31,7 @@ void yield(scheduler* sched, coroutine* coro);
 
 scheduler* sched_init();
 int sched_run(scheduler* shed);
-
+void sched_stop(scheduler* sched);
 
 #endif 
 
