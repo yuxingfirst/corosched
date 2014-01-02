@@ -7,17 +7,17 @@
  * the sheduler manager all the active coroutines
 */
 
-typedef struct coroutine coroutine;
-
-TAILQ_HEAD(coro_tqh, coroutine);
-typedef struct coro_tqh coro_tqh;
+enum 
+{
+    DEFAULT_STACK_SIZE = 8192
+};
 
 typedef struct scheduler 
 {
     coroutine* allcoroutines; 
     long nallcoroutines;
 	
-	unsigned int stop;
+	uint stop;
 	
     coroutine* main_coro; 
     coroutine* running_coro; 
@@ -25,9 +25,14 @@ typedef struct scheduler
     coro_tqh wait_sched_queue;
 };
 
-coroutine* get_coroutine(scheduler* sched, coro_id_t pid);
+coroutine* get_coro(scheduler* sched, coroid_t pid);
+void add_coro(scheduler* sched, coroutine* coro);
 
-void yield(scheduler* sched, coroutine* coro);
+void coro_yield(scheduler* sched, coroutine* coro);
+void coro_ready(scheduler* sched, coroutine* coro)
+void coro_exit(coroutine* coro);
+
+rstatus coro_create(scheduler *shed, void (*fn)(void *arg), void *arg, size_t stacksize);
 
 scheduler* sched_init();
 int sched_run(scheduler* shed);
