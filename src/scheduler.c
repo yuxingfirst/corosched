@@ -35,7 +35,8 @@ void coro_exit(scheduler* sched)
 	coro_switch(sched->current_coro, sched->main_coro);
 }
 
-void sched_func(void *arg) {
+void sched_func(void *arg) 
+{
 	scheduler *sched = (scheduler*)arg;
 	
 	while(!sched->stop && !empty(&sched->wait_sched_queue)) {
