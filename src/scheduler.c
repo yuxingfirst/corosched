@@ -37,7 +37,7 @@ static void coro_register(scheduler* sched, coroutine* coro)
 	if(sched->nallcoroutines % COROUTINE_SIZE == 0) {	//need expand allcoroutines
 		sched->allcoroutines = realloc(sched->allcoroutines, (sched->nallcoroutines + COROUTINE_SIZE) * sizeof(sched->allcoroutines));
 		if(sched->allcoroutines == nil) {
-			fprintf(stderr, "%s\n", "coro_register realloc fail");
+            log_error("register coroutine,realloc fail");
 			abort();
 		}
 	}
@@ -66,6 +66,7 @@ static void sched_proc(void *arg)
 			coro_dealloc(c);
 		}
 	}
+    log_warn("no tasks, exit scheduler");
 	coro_transfer(&sched->sched_coro->ctx, &sched->main_coro);
 }
 
@@ -73,6 +74,7 @@ scheduler* sched_init()
 {
     scheduler* sched = malloc(sizeof(scheduler));
     if(sched == nil) {
+        log_error("init scheduler malloc fail.");
         return nil; 
     }
 	sched->allcoroutines = nil;
@@ -80,6 +82,7 @@ scheduler* sched_init()
 	sched->stop = 0;
 	sched->sched_coro = coro_alloc(&sched_proc, sched, DEFAULT_STACK_SIZE);
 	if(sched->sched_coro == nil || sched->sched_coro->cid != SCHED_CORO_ID) {
+        log_error("init scheduler alloc sched_coro fail");
 		return nil;
 	}
 	sched->current_coro = nil;

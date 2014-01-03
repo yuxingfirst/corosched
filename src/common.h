@@ -3,11 +3,20 @@
 
 #include "queue.h"
 #include "coro.h"
+#include "log.h"
 
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <time.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <error.h>
+#include <sys/stat.h>
 
 #define uint unsigned int 
 #define uchar unsigned char
