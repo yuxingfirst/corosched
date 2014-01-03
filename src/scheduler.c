@@ -1,7 +1,7 @@
 #include "scheduler.h"
 #include "coroutine.h"
 
-rstatus coro_create(scheduler *sched, void (*fn)(void *arg), void *arg, size_t stacksize)
+rstatus coro_swapn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t stacksize)
 {
     assert(sched == nil);
 

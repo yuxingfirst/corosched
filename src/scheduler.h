@@ -28,7 +28,7 @@ typedef struct scheduler
    */
 void coro_yield(scheduler* sched);
 
-void coro_ready(scheduler* sched, coroutine* coro)
+void coro_ready(scheduler* sched, coroutine* coro);
 
 /*
   *  Current coro exit from the scheduler and main coro take charge of execute
@@ -38,7 +38,7 @@ void coro_exit(scheduler* sched);
 /*
   * Create a coroutine and add to schedule queue
   */
-rstatus coro_create(scheduler *shed, void (*fn)(void *arg), void *arg, size_t stacksize);
+rstatus coro_swapn(scheduler *shed, void (*fn)(void *arg), void *arg, size_t stacksize);
 
 static void coro_register(scheduler* sched, coroutine* coro);
 
