@@ -14,10 +14,10 @@ enum
 
 typedef struct scheduler 
 {
-	coro_context main_coro;
+    coro_context main_coro;
     coroutine* allcoroutines; 
     int nallcoroutines;
-	int stop;
+    int stop;
     coroutine* sched_coro; 
     coroutine* current_coro; 
     coro_tqh wait_sched_queue;
@@ -40,17 +40,19 @@ void coro_exit(scheduler* sched);
   */
 rstatus coro_create(scheduler *shed, void (*fn)(void *arg), void *arg, size_t stacksize);
 
+static void coro_register(scheduler* sched, coroutine* coro);
+
 scheduler* sched_init();
 rstatus sched_run(scheduler* sched);
 void sched_stop(scheduler* sched);
-void sched_func(void *arg);
+static void sched_proc(void *arg);
 
 coroutine* get_coro(scheduler* sched, coroid_t pid);
 
-void insert_tail(coro_tqh *queue, coroutine* coro);
-void insert_head(coro_tqh *queue, coroutine* coro);
-int  empty(coro_tqh *queue);
-
+static void insert_tail(coro_tqh *queue, coroutine* coro);
+static void insert_head(coro_tqh *queue, coroutine* coro);
+static int  empty(coro_tqh *queue);
+static coroutine* pop(coro_tqh *queue);
 
 #endif 
 

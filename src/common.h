@@ -22,7 +22,7 @@
 #define RUN 3
 #define EXIT 4
 
-#define COROUTINE_SIZE 256
+#define COROUTINE_SIZE 64
 #define SCHED_CORO_ID 0
 
 #define coroid_t int

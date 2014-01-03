@@ -13,15 +13,17 @@ typedef struct coroutine
 };
 
 /*
-  * Coroutine switch
+  * coroutine switch
  */
 void coro_switch(coroutine *from, coroutine *to);
 
 /*
-  * Create coroutine
+  * alloc coroutine
   *
   * Return nil if occur error
  */
-coroutine* coro_create(void (*fn)(void*), void *arg, size_t stack);
+coroutine* coro_alloc(void (*fn)(void*), void *arg, size_t stack);
+
+void coro_dealloc(coroutine *c);
 
 #endif	//_COROUTINE_H_

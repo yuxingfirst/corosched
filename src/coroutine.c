@@ -1,5 +1,5 @@
 #include "coroutine.h"
-#include "s"
+
 
 static coroid_t coroidgen = 0;
 
@@ -9,22 +9,25 @@ void coro_switch(coroutine *from, coroutine *to) {
     coro_transfer(&from->ctx, &to->ctx);
 }
 
-coroutine* coro_create(void (*fn)(void*), void *arg, size_t stack) 
+coroutine* coro_alloc(void (*fn)(void*), void *arg, size_t stack) 
 {
-    coroutine *coro = nil;
-    coro = malloc(sizeof(coroutine) + stack);
-    if(coro == nil) {
+    coroutine *co = nil;
+    co = malloc(sizeof(coroutine) + stack);
+    if(co == nil) {
         fprintf(2, "%s\n", "coro_alloc fail.");
         return nil;
     } 
-    memset(coro, 0, sizeof(coroutine));
-    coro->cid = coroidgen++;
-    void* stk = (void*)(coro + 1);   
-    coro_create(&coro->ctx, fn, arg, stk, stack);
-	coro->status = FREE;
-    return coro;
+    memset(co, 0, sizeof(coroutine));
+    co->cid = coroidgen++;
+    void* stk = (void*)(co + 1);   
+    coro_create(&co->ctx, fn, arg, stk, stack);
+	co->status = FREE;
+    return co;
 }
 
-
+void coro_dealloc(coroutine *c) 
+{
+    free(c);
+}
 
 
