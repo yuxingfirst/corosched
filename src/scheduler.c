@@ -125,4 +125,3 @@ static coroutine* pop(coro_tqh *queue)
 	return head;
 }
 
-static 

@@ -4,7 +4,7 @@
 #include "queue.h"
 #include "coro.h"
 
-#include "string.h"
+#include <string.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
