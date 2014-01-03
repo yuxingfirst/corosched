@@ -15,10 +15,33 @@ rstatus coro_create(scheduler *sched, void (*fn)(void *arg), void *arg, size_t s
 
 void coro_ready(scheduler* sched, coroutine* coro)
 {
-    assert(coro == nil);
-
+    assert(coro->status != READY);
     coro->ready = READY;
+	add_coro(sched, coro);
+}
 
+
+void coro_yield(scheduler* sched)
+{
+	coro_ready(sched, sched->current_coro);
+	coro_switch(sched->current_coro, sched->main_coro);
+}
+
+
+void coro_exit(scheduler* sched) 
+{
+	assert(sched->current_coro->exiting != 1);
+	sched->current_coro->exiting = 1;
+	coro_switch(sched->current_coro, sched->main_coro);
+}
+
+void sched_func(void *arg) {
+	scheduler *sched = (scheduler*)arg;
+	
+	while(!sched->stop && !empty(&sched->wait_sched_queue)) {
+		
+	}
+	
 }
 
 scheduler* sched_init() 
@@ -30,7 +53,17 @@ scheduler* sched_init()
     main_coro = 
 }
 
-void add_coro(scheduler* sched, coroutine* coro) 
+void insert_tail(coro_tqh *queue, coroutine* coro)
 {
-    TAILQ_INSERT_TAIL(&sched->wait_sched_queue, coro, ws_tqe);  
+	TAILQ_INSERT_TAIL(queue, coro, ws_tqe);
+}
+
+void insert_head(coro_tqh *queue, coroutine* coro)
+{
+	TAILQ_INSERT_HEAD(queue, coro, ws_tqe);
+}
+
+int  empty(coro_tqh *queue) 
+{
+	return TAILQ_EMPTY(queue);
 }

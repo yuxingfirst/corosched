@@ -16,8 +16,11 @@
 #define OK 0
 #define ERR -1
 
-#define READY 1
-#define UNREADY 0
+#define cstatus int
+#define FREE 1
+#define READY 2
+#define RUN 3
+#define EXIT 4
 
 #define COROUTINE_SIZE 1024
 

@@ -19,12 +19,9 @@ coroutine* coro_create(void (*fn)(void*), void *arg, size_t stack)
     } 
     memset(coro, 0, sizeof(coroutine));
     coro->cid = ++coroidgen;
-    coro->stk = (uchar*)(coro + 1);   
-    coro->stksize = stack;
-    coro->startfn = fn; 
-    coro->startarg = arg;
-    coro->ready = UNREADY;
-    coro_create(&coro->ctx, coro->startfn, coro->startarg, coro->stk, coro->stksize);
+    void* stk = (void*)(coro + 1);   
+    coro_create(&coro->ctx, fn, arg, stk, stack);
+	coro->status = FREE;
     return coro;
 }
 

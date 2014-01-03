@@ -5,16 +5,11 @@
 
 typedef struct coroutine
 {
-	TAILQ_ENTRY(coroutine)     ws_tqe;    /* link in sheduler wait_shed_queue */
-	coroid_t        cid;
-	coro_context    ctx;
-	uchar           *stk;
-    size_t          stksize;
-	int	            alltaskslot;
-	int        	    exiting:1;
-	int             ready:1;
-	void            (*startfn)(void*);
-    void            *startarg;
+	TAILQ_ENTRY(coroutine)     	ws_tqe;    /* link in sheduler wait_shed_queue */
+	coroid_t        			cid;
+	coro_context    			ctx;
+	int	            			alltaskslot;
+	cstatus 					status;	
 };
 
 void coro_switch(coroutine *from, coroutine *to);
