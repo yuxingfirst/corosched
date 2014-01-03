@@ -14,14 +14,12 @@ enum
 
 typedef struct scheduler 
 {
+	coro_context main_coro;
     coroutine* allcoroutines; 
-    long nallcoroutines;
-	
+    int nallcoroutines;
 	int stop;
-	
-    coroutine main_coro; 
+    coroutine* sched_coro; 
     coroutine* current_coro; 
-
     coro_tqh wait_sched_queue;
 };
 
@@ -43,7 +41,7 @@ void coro_exit(scheduler* sched);
 rstatus coro_create(scheduler *shed, void (*fn)(void *arg), void *arg, size_t stacksize);
 
 scheduler* sched_init();
-int sched_run(scheduler* shed);
+rstatus sched_run(scheduler* sched);
 void sched_stop(scheduler* sched);
 void sched_func(void *arg);
 

@@ -12,7 +12,7 @@
 #define uint unsigned int 
 #define uchar unsigned char
 
-#define nil NULL
+#define nil ((void*)0)
 #define OK 0
 #define ERR -1
 
@@ -22,9 +22,10 @@
 #define RUN 3
 #define EXIT 4
 
-#define COROUTINE_SIZE 1024
+#define COROUTINE_SIZE 256
+#define SCHED_CORO_ID 0
 
-#define coroid_t long
+#define coroid_t int
 #define rstatus int
 
 typedef struct coroutine coroutine;

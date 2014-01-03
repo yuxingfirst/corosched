@@ -1,7 +1,7 @@
 #include "coroutine.h"
 #include "s"
 
-static coroid_t coroidgen = 1;
+static coroid_t coroidgen = 0;
 
 void coro_switch(coroutine *from, coroutine *to) {
     assert(from != nil); 
@@ -18,7 +18,7 @@ coroutine* coro_create(void (*fn)(void*), void *arg, size_t stack)
         return nil;
     } 
     memset(coro, 0, sizeof(coroutine));
-    coro->cid = ++coroidgen;
+    coro->cid = coroidgen++;
     void* stk = (void*)(coro + 1);   
     coro_create(&coro->ctx, fn, arg, stk, stack);
 	coro->status = FREE;

@@ -48,9 +48,30 @@ scheduler* sched_init()
 {
     scheduler* sched = malloc(sizeof(scheduler));
     if(sched == nil) {
-        return nil; 
+        return NULL; 
     }
-    main_coro = 
+	sched->allcoroutines = nil;
+    sched->nallcoroutines = 0;
+	sched->stop = 0;
+	sched_coro = coro_create(&sched_func, sched, DEFAULT_STACK_SIZE);
+	if(sched_coro == nil || sched_coro->cid != SCHED_CORO_ID) {
+		return NULL;
+	}
+	sched->current_coro = nil;
+	TAILQ_HEAD_INITIALIZER(sched->wait_sched_queue);
+	return sched;
+}
+
+rstatus sched_run(scheduler* sched) 
+{
+	assert(sched != nil);
+	coro_transfer(&sched->main_coro, &sched->sched_coro->ctx);
+	return OK;
+}
+
+void sched_stop(scheduler* sched) 
+{
+	sched->stop = 1;
 }
 
 void insert_tail(coro_tqh *queue, coroutine* coro)

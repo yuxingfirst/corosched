@@ -12,7 +12,16 @@ typedef struct coroutine
 	cstatus 					status;	
 };
 
+/*
+  * Coroutine switch
+ */
 void coro_switch(coroutine *from, coroutine *to);
+
+/*
+  * Create coroutine
+  *
+  * Return nil if occur error
+ */
 coroutine* coro_create(void (*fn)(void*), void *arg, size_t stack);
 
 #endif	//_COROUTINE_H_
