@@ -1,10 +1,8 @@
 #include "scheduler.h"
-#include "coroutine.h"
 
-rstatus coro_swapn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t stacksize)
+rstatus coro_spawn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t stacksize)
 {
-    assert(sched == nil);
-
+    assert(sched != nil);
     coroutine *coro = coro_alloc(fn, arg, stacksize);
     if(coro == nil) {
         return ERR;
@@ -17,7 +15,7 @@ rstatus coro_swapn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t st
 void coro_ready(scheduler* sched, coroutine* coro)
 {
     assert(coro->status == FREE || coro->status == RUN);
-    coro->ready = READY;
+    coro->status = READY;
 	insert_tail(&sched->wait_sched_queue, coro);
 }
 
@@ -37,14 +35,14 @@ void coro_exit(scheduler* sched)
 static void coro_register(scheduler* sched, coroutine* coro)
 {
 	if(sched->nallcoroutines % COROUTINE_SIZE == 0) {	//need expand allcoroutines
-		allcoroutines = realloc(sched->allcoroutines, (sched->nallcoroutines + COROUTINE_SIZE) * sizeof(sched->allcoroutines));
-		if(allcoroutines == nil) {
-			fprintf(2, "%s\n", "coro_register realloc fail");
+		sched->allcoroutines = realloc(sched->allcoroutines, (sched->nallcoroutines + COROUTINE_SIZE) * sizeof(sched->allcoroutines));
+		if(sched->allcoroutines == nil) {
+			fprintf(stderr, "%s\n", "coro_register realloc fail");
 			abort();
 		}
 	}
-	coro->alltaskslot = nallcoroutines;
-	allcoroutines[sched->nallcoroutines++] = coro;
+	coro->alltaskslot = sched->nallcoroutines;
+	sched->allcoroutines[sched->nallcoroutines++] = coro;
 }
 
 static void sched_proc(void *arg) 
@@ -58,33 +56,34 @@ static void sched_proc(void *arg)
 		}
 		c->status = RUN;
 		sched->current_coro = c;
-		coro_switch(sched_coro, sched->current_coro);
+		coro_switch(sched->sched_coro, sched->current_coro);
 		assert(c == sched->current_coro);
 		sched->current_coro = nil;
 		if(c->status == EXIT) {	//need free
 			i = c->alltaskslot;
-			allcoroutines[i] = allcoroutines[--sched->nallcoroutines];
-			allcoroutines[i]->alltaskslot = i;
+			sched->allcoroutines[i] = sched->allcoroutines[--sched->nallcoroutines];
+			sched->allcoroutines[i]->alltaskslot = i;
 			coro_dealloc(c);
 		}
 	}
+	coro_transfer(&sched->sched_coro->ctx, &sched->main_coro);
 }
 
 scheduler* sched_init() 
 {
     scheduler* sched = malloc(sizeof(scheduler));
     if(sched == nil) {
-        return NULL; 
+        return nil; 
     }
 	sched->allcoroutines = nil;
     sched->nallcoroutines = 0;
 	sched->stop = 0;
-	sched_coro = coro_create(&sched_proc, sched, DEFAULT_STACK_SIZE);
-	if(sched_coro == nil || sched_coro->cid != SCHED_CORO_ID) {
-		return NULL;
+	sched->sched_coro = coro_alloc(&sched_proc, sched, DEFAULT_STACK_SIZE);
+	if(sched->sched_coro == nil || sched->sched_coro->cid != SCHED_CORO_ID) {
+		return nil;
 	}
 	sched->current_coro = nil;
-	TAILQ_HEAD_INITIALIZER(sched->wait_sched_queue);
+    TAILQ_INIT(&sched->wait_sched_queue);
 	return sched;
 }
 

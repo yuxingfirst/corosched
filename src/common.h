@@ -28,9 +28,7 @@
 #define coroid_t int
 #define rstatus int
 
-typedef struct coroutine coroutine;
 typedef struct coro_tqh coro_tqh;
-
 TAILQ_HEAD(coro_tqh, coroutine);
 
 #endif  //_COMMON_H_

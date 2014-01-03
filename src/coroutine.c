@@ -14,7 +14,7 @@ coroutine* coro_alloc(void (*fn)(void*), void *arg, size_t stack)
     coroutine *co = nil;
     co = malloc(sizeof(coroutine) + stack);
     if(co == nil) {
-        fprintf(2, "%s\n", "coro_alloc fail.");
+        fprintf(stderr, "%s\n", "coro_alloc fail.");
         return nil;
     } 
     memset(co, 0, sizeof(coroutine));

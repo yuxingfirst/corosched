@@ -2,6 +2,7 @@
 #define _SHEDULER_H_ 1
 
 #include "common.h"
+#include "coroutine.h"
 
 /*
  * the sheduler manager all the active coroutines
@@ -12,14 +13,15 @@ enum
     DEFAULT_STACK_SIZE = 8192
 };
 
-typedef struct scheduler 
+typedef struct scheduler scheduler;
+struct scheduler 
 {
     coro_context main_coro;
-    coroutine* allcoroutines; 
+    coroutine **allcoroutines; 
     int nallcoroutines;
     int stop;
-    coroutine* sched_coro; 
-    coroutine* current_coro; 
+    coroutine *sched_coro; 
+    coroutine *current_coro; 
     coro_tqh wait_sched_queue;
 };
 
@@ -38,7 +40,7 @@ void coro_exit(scheduler* sched);
 /*
   * Create a coroutine and add to schedule queue
   */
-rstatus coro_swapn(scheduler *shed, void (*fn)(void *arg), void *arg, size_t stacksize);
+rstatus coro_spawn(scheduler *shed, void (*fn)(void *arg), void *arg, size_t stacksize);
 
 static void coro_register(scheduler* sched, coroutine* coro);
 

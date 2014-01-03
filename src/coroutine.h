@@ -3,7 +3,8 @@
 
 #include "common.h"
 
-typedef struct coroutine
+typedef struct coroutine coroutine;
+struct coroutine 
 {
 	TAILQ_ENTRY(coroutine)     	ws_tqe;    /* link in sheduler wait_shed_queue */
 	coroid_t        			cid;
