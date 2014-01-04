@@ -7,7 +7,7 @@ int counter = 0;
 
 void func(void *arg) {
    while(1) {
-        if(++counter > 150) {
+        if(++counter > 1000) {
             sched_stop(g_sched); 
         } 
         log(LOG_INFO, "counter:%d", counter);
