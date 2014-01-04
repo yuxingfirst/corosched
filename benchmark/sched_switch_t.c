@@ -7,9 +7,10 @@ int counter = 0;
 
 void func(void *arg) {
    while(1) {
-        if(++counter > 15000000) {
+        if(++counter > 150) {
             sched_stop(g_sched); 
         } 
+        log(LOG_INFO, "counter:%d", counter);
         coro_yield(g_sched); 
    } 
 }

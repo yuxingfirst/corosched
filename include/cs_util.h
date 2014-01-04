@@ -150,7 +150,7 @@ ssize_t _cs_recvn(int sd, void *vptr, size_t n);
 
 #define ASSERT(_x) do {                         \
     if (!(_x)) {                                \
-        nc_assert(#_x, __FILE__, __LINE__, 1);  \
+        cs_assert(#_x, __FILE__, __LINE__, 1);  \
     }                                           \
 } while (0)
 
@@ -160,7 +160,7 @@ ssize_t _cs_recvn(int sd, void *vptr, size_t n);
 
 #define ASSERT(_x) do {                         \
     if (!(_x)) {                                \
-        nc_assert(#_x, __FILE__, __LINE__, 0);  \
+        cs_assert(#_x, __FILE__, __LINE__, 0);  \
     }                                           \
 } while (0)
 

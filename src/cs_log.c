@@ -62,7 +62,7 @@ log_level_up(void)
 
     if (l->level < LOG_PVERB) {
         l->level++;
-        loga("up log level to %d", l->level);
+        loga(LOG_INFO, "up log level to %d", l->level);
     }
 }
 
@@ -73,7 +73,7 @@ log_level_down(void)
 
     if (l->level > LOG_EMERG) {
         l->level--;
-        loga("down log level to %d", l->level);
+        loga(LOG_INFO, "down log level to %d", l->level);
     }
 }
 
@@ -83,7 +83,7 @@ log_level_set(int level)
     struct logger *l = &logger;
 
     l->level = MAX(LOG_EMERG, MIN(level, LOG_PVERB));
-    loga("set log level to %d", l->level);
+    loga(LOG_INFO, "set log level to %d", l->level);
 }
 
 int
@@ -99,7 +99,7 @@ log_loggable(int level)
 }
 
 void
-_log(const char *file, int line, int panic, const char *fmt, ...)
+_log(const char *level, const char *file, int line, int panic, const char *fmt, ...)
 {
     struct logger *l = &logger;
     int len, size, errno_save;
@@ -124,8 +124,8 @@ _log(const char *file, int line, int panic, const char *fmt, ...)
     //len += cs_scnprintf(buf + len, size - len, "[%.*s] %s:%d ",
                         //strlen(timestr) - 1, timestr, file, line);
 
-    len += cs_scnprintf(buf + len, size - len, "[%.*s] ",
-                        strlen(timestr) - 1, timestr);
+    len += cs_scnprintf(buf + len, size - len, "[%.*s] [%s] ",
+                        strlen(timestr) - 1, timestr, level);
 
     va_start(args, fmt);
     len += cs_vscnprintf(buf + len, size - len, fmt, args);

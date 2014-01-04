@@ -268,7 +268,7 @@ cs_stacktrace(int skip_count)
     skip_count++; /* skip the current frame also */
 
     for (i = skip_count, j = 0; i < size; i++, j++) {
-        loga("[%d] %s", j, symbols[i]);
+        loga(LOG_WARN, "[%d] %s", j, symbols[i]);
     }
 
     free(symbols);

@@ -1,3 +1,0 @@
-[Sat Jan  4 21:02:33 2014] Init scheduler success, start... [sched_switch_t.c:33]
-[Sat Jan  4 21:02:34 2014] no tasks, exit scheduler [/home/xiongj/dev/git/corosched/src/cs_scheduler.c:69]
-[Sat Jan  4 21:02:34 2014] Scheduler stop, status:0 [sched_switch_t.c:35]

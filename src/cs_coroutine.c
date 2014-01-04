@@ -12,9 +12,9 @@ void coro_switch(coroutine *from, coroutine *to) {
 coroutine* coro_alloc(void (*fn)(void*), void *arg, size_t stack) 
 {
     coroutine *co = nil;
-    co = malloc(sizeof(coroutine) + stack);
+    co = cs_alloc(sizeof(coroutine) + stack);
     if(co == nil) {
-        fprintf(stderr, "%s\n", "coro_alloc fail.");
+        log_error("%s", "coro_alloc fail");
         return nil;
     } 
     memset(co, 0, sizeof(coroutine));
@@ -27,7 +27,7 @@ coroutine* coro_alloc(void (*fn)(void*), void *arg, size_t stack)
 
 void coro_dealloc(coroutine *c) 
 {
-    free(c);
+    cs_free(c); 
 }
 
 
