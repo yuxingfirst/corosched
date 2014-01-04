@@ -4,8 +4,8 @@
 static coroid_t coroidgen = 0;
 
 void coro_switch(coroutine *from, coroutine *to) {
-    assert(from != nil); 
-    assert(to != nil);
+    ASSERT(from != nil); 
+    ASSERT(to != nil);
     coro_transfer(&from->ctx, &to->ctx);
 }
 
