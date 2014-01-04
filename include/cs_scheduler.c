@@ -1,21 +1,21 @@
-#include "scheduler.h"
+#include "cs_scheduler.h"
 
-rstatus coro_spawn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t stacksize)
+rstatus_t coro_spawn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t stacksize)
 {
     assert(sched != nil);
     coroutine *coro = coro_alloc(fn, arg, stacksize);
     if(coro == nil) {
-        return ERR;
+        return M_ERR;
     }
 	coro_register(sched, coro);
     coro_ready(sched, coro);
-    return OK;
+    return M_OK;
 }
 
 void coro_ready(scheduler* sched, coroutine* coro)
 {
-    assert(coro->status == FREE || coro->status == RUN);
-    coro->status = READY;
+    assert(coro->status == M_FREE || coro->status == M_RUN);
+    coro->status = M_READY;
 	insert_tail(&sched->wait_sched_queue, coro);
 }
 
@@ -28,7 +28,7 @@ void coro_yield(scheduler* sched)
 
 void coro_exit(scheduler* sched) 
 {
-	sched->current_coro->status = EXIT;
+	sched->current_coro->status = M_EXIT;
 	coro_switch(sched->current_coro, sched->sched_coro);
 }
 
@@ -54,12 +54,12 @@ static void sched_proc(void *arg)
 		if(c == nil) {
 			break;
 		}
-		c->status = RUN;
+		c->status = M_RUN;
 		sched->current_coro = c;
 		coro_switch(sched->sched_coro, sched->current_coro);
 		assert(c == sched->current_coro);
 		sched->current_coro = nil;
-		if(c->status == EXIT) {	//need free
+		if(c->status == M_EXIT) {	//need free
 			i = c->alltaskslot;
 			sched->allcoroutines[i] = sched->allcoroutines[--sched->nallcoroutines];
 			sched->allcoroutines[i]->alltaskslot = i;
@@ -90,11 +90,11 @@ scheduler* sched_init()
 	return sched;
 }
 
-rstatus sched_run(scheduler* sched) 
+rstatus_t sched_run(scheduler* sched) 
 {
 	assert(sched != nil);
 	coro_transfer(&sched->main_coro, &sched->sched_coro->ctx);
-	return OK;
+	return M_OK;
 }
 
 void sched_stop(scheduler* sched) 

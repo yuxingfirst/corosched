@@ -1,9 +1,9 @@
 /*
- * this log componet get from twemproxy
+ * this log componet get from twemproxy and do some modify
  * twemproxy project home: https://github.com/twitter/twemproxy
  */
 
-#include "common.h"
+#include "cs_common.h"
 
 static struct logger logger;
 
@@ -121,16 +121,21 @@ _log(const char *file, int line, int panic, const char *fmt, ...)
     local = localtime(&t);
     timestr = asctime(local);
 
-    len += nc_scnprintf(buf + len, size - len, "[%.*s] %s:%d ",
-                        strlen(timestr) - 1, timestr, file, line);
+    //len += cs_scnprintf(buf + len, size - len, "[%.*s] %s:%d ",
+                        //strlen(timestr) - 1, timestr, file, line);
+
+    len += cs_scnprintf(buf + len, size - len, "[%.*s] ",
+                        strlen(timestr) - 1, timestr);
 
     va_start(args, fmt);
-    len += nc_vscnprintf(buf + len, size - len, fmt, args);
+    len += cs_vscnprintf(buf + len, size - len, fmt, args);
     va_end(args);
+
+    len += cs_scnprintf(buf + len, size - len, " [%s:%d]", file, line);
 
     buf[len++] = '\n';
 
-    n = nc_write(l->fd, buf, len);
+    n = cs_write(l->fd, buf, len);
     if (n < 0) {
         l->nerror++;
     }
@@ -156,12 +161,12 @@ _log_stderr(const char *fmt, ...)
     size = 4 * LOG_MAX_LEN; /* size of output buffer */
 
     va_start(args, fmt);
-    len += nc_vscnprintf(buf, size, fmt, args);
+    len += cs_vscnprintf(buf, size, fmt, args);
     va_end(args);
 
     buf[len++] = '\n';
 
-    n = nc_write(STDERR_FILENO, buf, len);
+    n = cs_write(STDERR_FILENO, buf, len);
     if (n < 0) {
         l->nerror++;
     }
@@ -197,7 +202,7 @@ _log_hexdump(const char *file, int line, char *data, int datalen,
         unsigned char c;
         int savelen;
 
-        len += nc_scnprintf(buf + len, size - len, "%08x  ", off);
+        len += cs_scnprintf(buf + len, size - len, "%08x  ", off);
 
         save = data;
         savelen = datalen;
@@ -205,28 +210,28 @@ _log_hexdump(const char *file, int line, char *data, int datalen,
         for (i = 0; datalen != 0 && i < 16; data++, datalen--, i++) {
             c = (unsigned char)(*data);
             str = (i == 7) ? "  " : " ";
-            len += nc_scnprintf(buf + len, size - len, "%02x%s", c, str);
+            len += cs_scnprintf(buf + len, size - len, "%02x%s", c, str);
         }
         for ( ; i < 16; i++) {
             str = (i == 7) ? "  " : " ";
-            len += nc_scnprintf(buf + len, size - len, "  %s", str);
+            len += cs_scnprintf(buf + len, size - len, "  %s", str);
         }
 
         data = save;
         datalen = savelen;
 
-        len += nc_scnprintf(buf + len, size - len, "  |");
+        len += cs_scnprintf(buf + len, size - len, "  |");
 
         for (i = 0; datalen != 0 && i < 16; data++, datalen--, i++) {
             c = (unsigned char)(isprint(*data) ? *data : '.');
-            len += nc_scnprintf(buf + len, size - len, "%c", c);
+            len += cs_scnprintf(buf + len, size - len, "%c", c);
         }
-        len += nc_scnprintf(buf + len, size - len, "|\n");
+        len += cs_scnprintf(buf + len, size - len, "|\n");
 
         off += 16;
     }
 
-    n = nc_write(l->fd, buf, len);
+    n = cs_write(l->fd, buf, len);
     if (n < 0) {
         l->nerror++;
     }

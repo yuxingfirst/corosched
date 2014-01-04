@@ -1,4 +1,4 @@
-#include "coroutine.h"
+#include "cs_coroutine.h"
 
 
 static coroid_t coroidgen = 0;
@@ -21,7 +21,7 @@ coroutine* coro_alloc(void (*fn)(void*), void *arg, size_t stack)
     co->cid = coroidgen++;
     void* stk = (void*)(co + 1);   
     coro_create(&co->ctx, fn, arg, stk, stack);
-	co->status = FREE;
+	co->status = M_FREE;
     return co;
 }
 
