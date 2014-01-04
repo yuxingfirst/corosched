@@ -34,11 +34,7 @@
 #define COROUTINE_SIZE 64
 #define SCHED_CORO_ID 0
 
-//#define true 1
-//#define false 0
-
-//#define MIN(a, b)           ((a) < (b) ? (a) : (b))
-//#define MAX(a, b)           ((a) > (b) ? (a) : (b))
+typedef long msg_seqid_t;
 
 typedef int coroid_t;
 typedef int rstatus_t;
