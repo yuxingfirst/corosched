@@ -22,6 +22,8 @@ coroutine* coro_alloc(void (*fn)(void*), void *arg, size_t stack)
     void* stk = (void*)(co + 1);   
     coro_create(&co->ctx, fn, arg, stk, stack);
 	co->status = M_FREE;
+    co->sched = nil;
+    co->parallel_id = M_INVALID_PARALLEL_ID;
     return co;
 }
 

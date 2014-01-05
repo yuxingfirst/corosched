@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <sys/sysinfo.h>
 
 #include "cs_string.h"
 
@@ -137,6 +138,12 @@ void _cs_free(void *ptr, const char *name, int line);
 
 #define cs_writev(_d, _b, _n)   \
     writev(_d, _b, (int)(_n))
+
+/*
+ * Wrappers to get machine info.
+ */
+#define cs_get_nprocs()         \
+    get_nprocs()
 
 ssize_t _cs_sendn(int sd, const void *vptr, size_t n);
 ssize_t _cs_recvn(int sd, void *vptr, size_t n);

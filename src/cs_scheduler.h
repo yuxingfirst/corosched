@@ -23,33 +23,29 @@ struct scheduler
     coroutine *sched_coro; 
     coroutine *current_coro; 
     coro_tqh wait_sched_queue;
+    int parallelnum;    //if master scheduler, it is -1.
 };
 
-/*
-   *  Give up the cpu temporarily and wait reschedule later
-   */
-void coro_yield(scheduler* sched);
+rstatus_t coro_spawn(void (*fn)(void *arg), void *arg, size_t stacksize);
+void coro_yield();
+void coro_ready(coroutine* coro);
+void coro_exit();
 
-void coro_ready(scheduler* sched, coroutine* coro);
+coroutine* get_coro(coroid_t pid);
+void sched_stop(scheduler *sched);
+static void coro_register(coroutine* coro);
+static void sched_run(void *arg);
 
-/*
-  *  Current coro exit from the scheduler and main coro take charge of execute
-  */
-void coro_exit(scheduler* sched);
+rstatus_t switchto_parallel_sched(coroutine *c);
+rstatus_t switchto_master_sched(coroutine *c);
+void parallel_start(void *arg);
+void parallel_sched_run(void *arg);
 
-/*
-  * Create a coroutine and add to schedule queue
-  */
-rstatus_t coro_spawn(scheduler *shed, void (*fn)(void *arg), void *arg, size_t stacksize);
+rstatus_t env_init();
+rstatus_t env_run();
+void env_stop();
 
-static void coro_register(scheduler* sched, coroutine* coro);
-
-scheduler* sched_init();
-rstatus_t sched_run(scheduler* sched);
-void sched_stop(scheduler* sched);
-static void sched_proc(void *arg);
-
-coroutine* get_coro(scheduler* sched, coroid_t pid);
+static void master_start(void *arg);
 
 static void insert_tail(coro_tqh *queue, coroutine* coro);
 static void insert_head(coro_tqh *queue, coroutine* coro);

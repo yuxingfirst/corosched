@@ -3,7 +3,6 @@
 
 #include "cs_common.h"
 
-typedef struct coroutine coroutine;
 struct coroutine 
 {
 	TAILQ_ENTRY(coroutine)     	ws_tqe;    /* link in sheduler wait_shed_queue */
@@ -11,6 +10,8 @@ struct coroutine
 	coro_context    			ctx;
 	int	            			alltaskslot;
 	cstatus_t 					status;	
+    scheduler                   *sched;   //my scheduler
+    int                         parallel_id;
 };
 
 /*
