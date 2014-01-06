@@ -25,11 +25,6 @@
  * the sheduler manager all the active coroutines
 */
 
-enum 
-{
-    DEFAULT_STACK_SIZE = 8192
-};
-
 typedef struct scheduler scheduler;
 struct scheduler 
 {
@@ -52,6 +47,7 @@ coroutine* get_coro(coroid_t pid);
 void sched_stop(scheduler *sched);
 static void coro_register(coroutine* coro);
 static void sched_run(void *arg);
+static void master_start(void *arg);
 
 rstatus_t switchto_parallel_sched(coroutine *c);
 rstatus_t switchto_master_sched(coroutine *c);
@@ -61,8 +57,6 @@ void parallel_sched_run(void *arg);
 rstatus_t env_init();
 rstatus_t env_run();
 void env_stop();
-
-static void master_start(void *arg);
 
 static void insert_tail(coro_tqh *queue, coroutine* coro);
 static void insert_head(coro_tqh *queue, coroutine* coro);

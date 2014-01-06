@@ -76,7 +76,7 @@ static void sched_run(void *arg)
 		c->status = M_RUN;
 		g_mastersched->current_coro = c;
 		coro_switch(g_mastersched->sched_coro, g_mastersched->current_coro);
-		assert(c == g_mastersched->current_coro);
+		ASSERT(c == g_mastersched->current_coro);
 		g_mastersched->current_coro = nil;
 		if(c->status == M_EXIT) {	//need free
 			i = c->alltaskslot;
