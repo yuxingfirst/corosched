@@ -25,7 +25,6 @@
 #include <sys/epoll.h>
 
 typedef struct event {
-
 	uint_32 mask;
 	int sockfd;
 	int events;
@@ -38,7 +37,7 @@ struct eventmanager {
 	int nevent;	/* # epoll event */	
 	int max_timeout; /* epoll wait max timeout in msec */
 	coroutine *evmgr_coro; 
-	int status;
+	int stop;
 };
 
 rstatus eventmgr_init(eventmanager *eventmgr);
@@ -46,6 +45,6 @@ void register_event(eventmanager *eventmgr, event *ev);
 void remove_event(eventmanager *eventmgr, event *ev);
 
 static void event_loop(void *arg);
-
+static void event_callback(const struct *events, int nevent);
 
 #endif	//_CS_EVENTMGR_H_

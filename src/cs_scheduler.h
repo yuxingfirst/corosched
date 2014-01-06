@@ -42,10 +42,11 @@ rstatus_t coro_spawn(void (*fn)(void *arg), void *arg, size_t stacksize);
 void coro_yield();
 void coro_ready(coroutine* coro);
 void coro_exit();
+static void coro_register(coroutine* coro);
 
 coroutine* get_coro(coroid_t pid);
 void sched_stop(scheduler *sched);
-static void coro_register(coroutine* coro);
+bool sched_has_task();
 static void sched_run(void *arg);
 static void master_start(void *arg);
 

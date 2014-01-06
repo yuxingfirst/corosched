@@ -61,6 +61,10 @@ static void coro_register(coroutine* coro)
 	g_mastersched->allcoroutines[g_mastersched->nallcoroutines++] = coro;
 }
 
+bool sched_has_task() {
+    return empty(&g_mastersched->wait_sched_queue); 
+}
+
 static void sched_run(void *arg) 
 {
 	int i = -1;
