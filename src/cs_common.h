@@ -53,6 +53,7 @@
 #define M_COROUTINE_SIZE 64
 #define M_SCHED_CORO_ID 0
 #define M_INVALID_PARALLEL_ID -1 
+#define M_VALID_PARALLEL_ID 0
 
 typedef long msg_seqid_t;
 

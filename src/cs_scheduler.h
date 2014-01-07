@@ -41,7 +41,12 @@ struct scheduler
 rstatus_t coro_spawn(void (*fn)(void *arg), void *arg, size_t stacksize);
 void coro_yield();
 void coro_ready(coroutine* coro);
+void coro_ready_immediatly();
 void coro_exit();
+rstatus coro_switch_to_parallel(coroutine *c);
+void coro_switch_to_master(coroutine *c);
+bool is_runin_parallel(coroutine *c);
+
 void yield_and_scheduler();
 
 static void coro_register(coroutine* coro);
@@ -52,10 +57,9 @@ bool sched_has_task();
 static void sched_run(void *arg);
 static void master_start(void *arg);
 
-rstatus_t switchto_parallel_sched(coroutine *c);
-rstatus_t switchto_master_sched(coroutine *c);
 void parallel_start(void *arg);
 void parallel_sched_run(void *arg);
+static void coro_sent_parallel(coroutine *c);
 
 rstatus_t env_init();
 rstatus_t env_run();

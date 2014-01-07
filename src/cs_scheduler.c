@@ -32,12 +32,20 @@ rstatus_t coro_spawn(void (*fn)(void *arg), void *arg, size_t stacksize)
     return M_OK;
 }
 
+void coro_ready_immediatly(coroutine* coro) 
+{
+    ASSERT(coro->status == M_FREE || coro->status == M_RUN);
+    coro->status = M_READY;
+	insert_head(&coro->sched->wait_sched_queue, coro);
+}
+
 void coro_ready(coroutine* coro)
 {
     ASSERT(coro->status == M_FREE || coro->status == M_RUN);
     coro->status = M_READY;
 	insert_tail(&coro->sched->wait_sched_queue, coro);
 }
+
 
 void coro_yield()
 {
@@ -51,13 +59,42 @@ void coro_exit()
 	coro_switch(g_mastersched->current_coro, g_mastersched->sched_coro);
 }
 
+rstatus coro_switch_to_parallel(coroutine *c)
+{
+	if(c->parallel_id != M_INVALIED_PARALLEL_ID) {
+		return M_ERR;
+	}	
+	c->parallel_id = M_VALID_PARALLEL_ID;	
+	coro_ready_immediatly(c);
+	coro_yield();
+	return M_OK;
+}
+
+
 void yield_and_scheduler()
 {
 	while(!g_mastersched->stop) {
 		if(!sched_has_task()) {
 			break;
 		}		
+		coroutine *c = pop(&g_mastersched->wait_sched_queue);
+		if(c == nil) {
+			break;
+		}
+		if(c->status == M_EXIT) {
+			continue;
+		}	
 
+		coro_ready(g_mastersched->current_coro);
+
+		if(c->parallel_id != M_INVALIED_PARALLEL_ID) {
+			coro_switch_to_parallel(c);
+			continue;
+		}
+		coroutine *my = g_mastersched->current_coro;
+		g_mastersched->current_coro = c;
+		coro_switch(my, g_mastersched->current_coro);		
+		break;
 	}	
 }
 
@@ -83,8 +120,8 @@ static void sched_run(void *arg)
 		if(c == nil) {
 			break;
 		}
-        if(c->parallel_id != M_INVALID_PARALLEL_ID) {   //need switch to parallel sched
-            //todo..
+        if(c->parallel_id != M_INVALID_PARALLEL_ID) {   
+		coro_sent_parallel(c);
             continue; 
         }
 		c->status = M_RUN;
