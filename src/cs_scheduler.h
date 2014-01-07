@@ -42,6 +42,8 @@ rstatus_t coro_spawn(void (*fn)(void *arg), void *arg, size_t stacksize);
 void coro_yield();
 void coro_ready(coroutine* coro);
 void coro_exit();
+void yield_and_scheduler();
+
 static void coro_register(coroutine* coro);
 
 coroutine* get_coro(coroid_t pid);
@@ -61,7 +63,7 @@ void env_stop();
 
 static void insert_tail(coro_tqh *queue, coroutine* coro);
 static void insert_head(coro_tqh *queue, coroutine* coro);
-static int  empty(coro_tqh *queue);
+static bool empty(coro_tqh *queue);
 static coroutine* pop(coro_tqh *queue);
 
 #endif 

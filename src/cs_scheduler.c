@@ -51,6 +51,16 @@ void coro_exit()
 	coro_switch(g_mastersched->current_coro, g_mastersched->sched_coro);
 }
 
+void yield_and_scheduler()
+{
+	while(!g_mastersched->stop) {
+		if(!sched_has_task()) {
+			break;
+		}		
+
+	}	
+}
+
 static void coro_register(coroutine* coro)
 {
 	if(g_mastersched->nallcoroutines % COROUTINE_SIZE == 0) {	//need expand allcoroutines
@@ -62,7 +72,7 @@ static void coro_register(coroutine* coro)
 }
 
 bool sched_has_task() {
-    return empty(&g_mastersched->wait_sched_queue); 
+    return !empty(&g_mastersched->wait_sched_queue); 
 }
 
 static void sched_run(void *arg) 
@@ -192,7 +202,7 @@ static void insert_head(coro_tqh *queue, coroutine* coro)
 	TAILQ_INSERT_HEAD(queue, coro, ws_tqe);
 }
 
-static int  empty(coro_tqh *queue) 
+static bool empty(coro_tqh *queue) 
 {
 	return TAILQ_EMPTY(queue);
 }
