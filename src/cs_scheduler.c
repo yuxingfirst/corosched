@@ -19,7 +19,7 @@
 
 struct scheduler *g_mastersched;
 struct scheduler *g_parallelsched;
-struct salfschedulerbackadapter *g_schedulerbackadapter;
+struct salfschedulerbackadapter *g_schedulebackadapter;
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -33,8 +33,12 @@ void sched_register_coro(coroutine* coro)
         g_mastersched->allcoroutines[g_mastersched->nallcoroutines++] = coro;
 }
 
+coroutine* sched_get_coro(coroid_t pid)
+{
+    return nil; 
+}
 
-void yield_and_scheduler()
+void sched_run_once()
 {
 	while(!g_mastersched->stop) {
 		if(!sched_has_task()) {
@@ -61,13 +65,9 @@ void yield_and_scheduler()
 	}	
 }
 
-
-
 bool sched_has_task() {
     return !empty(&g_mastersched->wait_sched_queue); 
 }
-
-
 
 static void sched_run(void *arg) 
 {
@@ -107,7 +107,7 @@ void* parallel_main(void *arg)
     return NULL;
 }
 
-void parallel_sched_run(void *arg)
+static void parallel_run(void *arg)
 {
     scheduler *psched = (scheduler*)arg;
     while(!psched->stop) {
@@ -129,17 +129,23 @@ void parallel_sched_run(void *arg)
     }
     coro_transfer(&psched->main_coro, &psched->sched_coro->ctx);
 }
+
+static void scheduleback_run(void *arg)
+{
+
+}
+
 rstatus_t env_init() 
 {
     g_mastersched = cs_alloc(sizeof(scheduler)); 
     g_parallel_sched = cs_alloc(sizeof(scheduler)); 
-    g_schedulerbackadapter = cs_alloc(sizeof(salfschedulebackadapter));
+    g_schedulebackadapter = cs_alloc(sizeof(salfschedulebackadapter));
 
-    if(g_mastersched == nil || g_parallel_sched == nil || g_schedulerbackadapter= nil) {
+    if(g_mastersched == nil || g_parallel_sched == nil || g_schedulebackadapter= nil) {
         log_error("init scheduler malloc fail.");
         cs_free(g_mastersched);
         cs_free(g_parallel_sched);
-        cs_free(g_schedulerbackadapter);
+        cs_free(g_schedulebackadapter);
         return nil; 
     }
     {
@@ -165,9 +171,9 @@ rstatus_t env_init()
     {
         int fd[2];
         socketpair(AF_UNIX, SOCK_STREAM, 0, fd);
-        g_schedulerbackadapter->scbd_coro = coro_alloc(&scheduleback_run, nil, DEFAULT_STACK_SIZE);
-        g_schedulerbackadapter->readfd = fd[0];
-        g_schedulerbackadapter->writefd = fd[1];
+        g_schedulebackadapter->scbd_coro = coro_alloc(&scheduleback_run, nil, DEFAULT_STACK_SIZE);
+        g_schedulebackadapter->readfd = fd[0];
+        g_schedulebackadapter->writefd = fd[1];
     }
 
 	return M_OK;

@@ -62,7 +62,7 @@ typedef int cstatus_t;
 typedef struct scheduler scheduler;
 typedef struct coroutine coroutine;
 typedef struct eventmanager eventmanager;
-typedef struct salfschedulerbackadapter salfschedulerbackadapter;
+typedef struct salfschedulebackadapter salfschedulebackadapter;
 
 typedef struct coro_tqh coro_tqh;
 TAILQ_HEAD(coro_tqh, coroutine);
@@ -70,7 +70,7 @@ TAILQ_HEAD(coro_tqh, coroutine);
 extern struct scheduler *g_mastersched;
 extern struct scheduler *g_parallelsched;
 extern struct eventmanager *g_eventmgr;
-extern struct salfschedulerbackadapter *g_schedulerbackadapter;
+extern struct salfschedulebackadapter *g_schedulebackadapter;
 extern pthread_mutex_t g_mutex;
 
 enum 

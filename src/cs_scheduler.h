@@ -25,7 +25,7 @@
  * the sheduler manager all the active coroutines
 */
 
-typedef struct scheduler 
+struct scheduler 
 {
     coro_context main_coro;
     coroutine **allcoroutines; 
@@ -38,18 +38,15 @@ typedef struct scheduler
 }scheduler;
 
 void sched_register_coro(coroutine* coro);
-
-void yield_and_scheduler();
-coroutine* get_coro(coroid_t pid);
-void sched_stop(scheduler *sched);
+coroutine* sched_get_coro(coroid_t pid);
+void sched_run_once();
 bool sched_has_task();
 static void sched_run(void *arg);
-static void master_start(void *arg);
 
-void parallel_start(void *arg);
-void parallel_sched_run(void *arg);
+void* parallel_main(void *arg);
+static void parallel_run(void *arg);
 
-typedef struct salfschedulebackadapter
+struct salfschedulebackadapters
 {
     coroutine *scbd_coro; 
    	int readfd;
@@ -62,10 +59,10 @@ rstatus_t env_init();
 rstatus_t env_run();
 void env_stop();
 
-static void insert_tail(coro_tqh *queue, coroutine* coro);
-static void insert_head(coro_tqh *queue, coroutine* coro);
-static bool empty(coro_tqh *queue);
-static coroutine* pop(coro_tqh *queue);
+ void insert_tail(coro_tqh *queue, coroutine* coro);
+ void insert_head(coro_tqh *queue, coroutine* coro);
+ bool empty(coro_tqh *queue);
+ coroutine* pop(coro_tqh *queue);
 
 #endif 
 
