@@ -25,7 +25,7 @@
 #include <sys/epoll.h>
 
 typedef struct event {
-	uint_32 mask;
+	uint32_t mask;
 	int sockfd;
 	int events;
 	coroutine *coro;

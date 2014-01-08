@@ -54,7 +54,7 @@ void sched_run_once()
 
 		coro_ready(g_mastersched->current_coro);
 
-		if(c->parallel_id != M_INVALIED_PARALLEL_ID) {
+		if(c->need_parallel) {
 			coro_switch_to_parallel(c);
 			continue;
 		}
@@ -86,7 +86,7 @@ static void sched_run(void *arg)
 		c->status = M_RUN;
 		g_mastersched->current_coro = c;
 		coro_switch(g_mastersched->sched_coro, g_mastersched->current_coro);
-		ASSERT(c == g_mastersched->current_coro);
+		//ASSERT(c == g_mastersched->current_coro);
 		g_mastersched->current_coro = nil;
 		if(c->status == M_EXIT) {	//need free
 			i = c->alltaskslot;
@@ -103,50 +103,85 @@ void* parallel_main(void *arg)
 {
     scheduler *psched = (scheduler*)arg;
     ASSERT(psched != nil);
+    pthread_lock(&g_mutex);
+    log_info("...parallel environment start...");
+    pthread_unlock(&g_mutex);
     coro_transfer(&psched->main_coro, &psched->sched_coro->ctx);
     return NULL;
 }
 
 static void parallel_run(void *arg)
 {
-    scheduler *psched = (scheduler*)arg;
+    coroutine *co = nil;
     while(!psched->stop) {
-        if(empty_salf(&psched->wait_sched_queue)) {
-            usleep(1000 * 500); 
-            continue;
-        } 
-        coroutine *co = pop_salf(&psched->wait_sched_queue);
-        ASSERT(co != nil);
-        if(co->parallel_id != psched->parallelnum) {
-            log_error("not match parallelid, coro->id:%d, coro->parallel_id:%d, sched->parallelnum:%d", co->cid, co->parallel_id, psched->parallelnum); 
-            continue;
+        if(pthread_mutex_trylock(&g_mutex) == 0) { 
+            if(empty(&g_parallelsched->wait_sched_queue)) {
+                usleep(1000 * 10);
+                continue;
+            }
+            co = pop(&g_parallelsched->wait_sched_queue);
+        } else {
+            usleep(1000 * 10); 
+            continue; 
         }
-        coro_switch(psched->sched_coro, co);
-        rstatus rs = switchto_master_sched(co);
+        ASSERT(co);
+        coro_switch(g_parallelsched->sched_coro, co);
+        rstatus_t rs = coro_switch_to_master(co);
         if(rs != M_OK) {
             log_error("switch back to master sched fail, coro->id:%d, sched->parallelnum:%d", co->cid, psched->parallelnum); 
         }
     }
-    coro_transfer(&psched->main_coro, &psched->sched_coro->ctx);
+    coro_transfer(&psched->sched_coro->ctx, &psched->main_coro);
 }
 
 static void scheduleback_run(void *arg)
 {
-
+    while(true) {
+        uint32_t mask = ReadMask;
+        event ev; 
+        ev.mask = ReadMask;
+        ev.readfd = g_schedulebackadapter->readfd;
+        ev.events = -1;
+        ev.coro = g_schedulebackadapter->scbd_coro;
+        register_event(g_eventmgr, &ev);
+        remove_event(g_eventmgr, &ev);
+        coroutine *c = nil;
+        while(true) {
+            ssize_t n = recv(ev.readfd, (void*)&c, sizeof(struct coroutine*), MSG_DONTWAIT);
+            if(n == sizeof(struct coroutine*)) {
+                break;
+            }
+            if(n == 0) {
+                log_warn("recv schedule back coroutine fail");
+                break;
+            }
+            if(n < 0 && errno == EINTR) {
+                continue;
+            }
+            break;
+        }
+        if(c != nil) {
+            c->need_parallel = false;
+            coro_ready(c);
+        }
+    }
 }
 
 rstatus_t env_init() 
 {
+
+    rstatus_t rs = M_ERR;
+
     g_mastersched = cs_alloc(sizeof(scheduler)); 
     g_parallel_sched = cs_alloc(sizeof(scheduler)); 
     g_schedulebackadapter = cs_alloc(sizeof(salfschedulebackadapter));
 
     if(g_mastersched == nil || g_parallel_sched == nil || g_schedulebackadapter= nil) {
         log_error("init scheduler malloc fail.");
-        cs_free(g_mastersched);
-        cs_free(g_parallel_sched);
-        cs_free(g_schedulebackadapter);
-        return nil; 
+        //cs_free(g_mastersched);
+        //cs_free(g_parallel_sched);
+        //cs_free(g_schedulebackadapter);
+        return rs; 
     }
     {
         g_mastersched->allcoroutines = nil;
@@ -155,7 +190,7 @@ rstatus_t env_init()
         g_mastersched->sched_coro = coro_alloc(&sched_proc, nil, DEFAULT_STACK_SIZE);
         if(g_mastersched->sched_coro == nil || g_mastersched->sched_coro->cid != SCHED_CORO_ID) {
             log_error("init scheduler alloc sched_coro fail");
-            return nil;
+            return rs;
         }
         g_mastersched->current_coro = nil;
         TAILQ_INIT(&g_mastersched->wait_sched_queue);
@@ -163,7 +198,7 @@ rstatus_t env_init()
 
     {
         g_parallel_sched->stop = 0;
-        g_parallel_sched->sched_coro = coro_alloc(&parallel_sched_run, g_parallel_sched, DEFAULT_STACK_SIZE);
+        g_parallel_sched->sched_coro = coro_alloc(&parallel_run, nil, DEFAULT_STACK_SIZE);
         g_parallel_sched->current_coro = nil;
         TAILQ_INIT(&g_parallel_sched->wait_sched_queue);
     }
@@ -175,13 +210,24 @@ rstatus_t env_init()
         g_schedulebackadapter->readfd = fd[0];
         g_schedulebackadapter->writefd = fd[1];
     }
-
-	return M_OK;
+    rs = M_OK;
+    rs = eventmgr_init(g_eventmgr);
+	return rs;
 }
 
 rstatus_t env_run() 
 {
-	ASSERT(g_mastersched != nil);
+	ASSERT(g_mastersched != nil && g_parallel_sched != nil);
+
+    pthread_t parallel_thread_id;
+    if( pthread_create(&parallel_thread_id, &parallel_main, nil, g_parallel_sched) != 0) {
+        log_error("env_run create thread fail, errno:%d", errno);
+        return M_ERR;
+    }
+    pthread_lock(&g_mutex);
+    log_info("env_run create thread succ, threadid:%lu", parallel_thread_id);
+    log_info("...master environment start...");
+    pthread_unlock(&g_mutex);
 	coro_transfer(&g_mastersched->main_coro, &g_mastersched->sched_coro->ctx);
 	return M_OK;
 }
@@ -189,6 +235,8 @@ rstatus_t env_run()
 void env_stop() 
 {
 	g_mastersched->stop = 1;
+    g_mastersched->stop = 1;
+    g_eventmgr->stop = 1; 
 }
 
 static void insert_tail(coro_tqh *queue, coroutine* coro)
