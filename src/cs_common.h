@@ -1,6 +1,6 @@
 /*
  * coro_sched - A mini coroutine schedule framework
- * Copyright (C) 2014 xiongj(shervalx@gmail.com).
+ * Copyright (C) 2014 xiongj(yuxingfirst@gmail.com).
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,8 +52,6 @@
 
 #define M_COROUTINE_SIZE 64
 #define M_SCHED_CORO_ID 0
-#define M_INVALID_PARALLEL_ID -1 
-#define M_VALID_PARALLEL_ID 0
 
 typedef long msg_seqid_t;
 
@@ -64,16 +62,16 @@ typedef int cstatus_t;
 typedef struct scheduler scheduler;
 typedef struct coroutine coroutine;
 typedef struct eventmanager eventmanager;
+typedef struct salfschedulerbackadapter salfschedulerbackadapter;
 
 typedef struct coro_tqh coro_tqh;
 TAILQ_HEAD(coro_tqh, coroutine);
 
-extern __thread struct scheduler *g_mastersched;
-extern __thread struct scheduler **g_parallel_scheds;
-extern __thread struct eventmanager *g_eventmgr;
-
-extern int current_parallelid;
-extern int n_max_procs;
+extern struct scheduler *g_mastersched;
+extern struct scheduler *g_parallelsched;
+extern struct eventmanager *g_eventmgr;
+extern struct salfschedulerbackadapter *g_schedulerbackadapter;
+extern pthread_mutex_t g_mutex;
 
 enum 
 {
@@ -87,3 +85,4 @@ enum
 };
 
 #endif  //_COMMON_H_
+

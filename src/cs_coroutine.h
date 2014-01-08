@@ -28,21 +28,23 @@ struct coroutine
 	int	            			alltaskslot;
 	cstatus_t 					status;	
     scheduler                   *sched;   //my scheduler
-    int                         parallel_id;
+    bool              need_parallel;
 };
 
-/*
-  * coroutine switch
- */
-void coro_switch(coroutine *from, coroutine *to);
+rstatus_t coro_spawn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t stacksize);
+rstatus coro_switch_to_master(coroutine *c);
+rstatus coro_switch_to_parallel(coroutine *c);
+rstatus coro_sent_parallel(coroutine *c);
 
-/*
-  * alloc coroutine
-  *
-  * Return nil if occur error
- */
+void coro_ready(coroutine* coro);
+void coro_ready_immediatly(coroutine* coro);
+void coro_exit();
+void coro_yield(coroutine *co);
+
+bool coro_runin_parallel(coroutine *c);
+
 coroutine* coro_alloc(void (*fn)(void*), void *arg, size_t stack);
-
+void coro_switch(coroutine *from, coroutine *to);
 void coro_dealloc(coroutine *c);
 
 #endif	//_COROUTINE_H_

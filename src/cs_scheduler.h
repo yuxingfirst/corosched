@@ -25,8 +25,7 @@
  * the sheduler manager all the active coroutines
 */
 
-typedef struct scheduler scheduler;
-struct scheduler 
+typedef struct scheduler 
 {
     coro_context main_coro;
     coroutine **allcoroutines; 
@@ -35,22 +34,12 @@ struct scheduler
     coroutine *sched_coro; 
     coroutine *current_coro; 
     coro_tqh wait_sched_queue;
-    int parallelnum;    //if master scheduler, it is -1.
-};
+    bool is_parallel_sched;
+}scheduler;
 
-rstatus_t coro_spawn(void (*fn)(void *arg), void *arg, size_t stacksize);
-void coro_yield();
-void coro_ready(coroutine* coro);
-void coro_ready_immediatly();
-void coro_exit();
-rstatus coro_switch_to_parallel(coroutine *c);
-void coro_switch_to_master(coroutine *c);
-bool is_runin_parallel(coroutine *c);
+void sched_register_coro(coroutine* coro);
 
 void yield_and_scheduler();
-
-static void coro_register(coroutine* coro);
-
 coroutine* get_coro(coroid_t pid);
 void sched_stop(scheduler *sched);
 bool sched_has_task();
@@ -59,7 +48,15 @@ static void master_start(void *arg);
 
 void parallel_start(void *arg);
 void parallel_sched_run(void *arg);
-static void coro_sent_parallel(coroutine *c);
+
+typedef struct salfschedulebackadapter
+{
+    coroutine *scbd_coro; 
+   	int readfd;
+   	int writefd; 
+}salfschedulebackadapter;
+
+static void scheduleback_run(void *arg);
 
 rstatus_t env_init();
 rstatus_t env_run();

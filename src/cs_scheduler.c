@@ -17,57 +17,20 @@
 
 #include "cs_scheduler.h"
 
-__thread struct scheduler *g_mastersched;
-int n_max_procs = -1;
+struct scheduler *g_mastersched;
+struct scheduler *g_parallelsched;
+struct salfschedulerbackadapter *g_schedulerbackadapter;
 
-rstatus_t coro_spawn(void (*fn)(void *arg), void *arg, size_t stacksize)
+pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void sched_register_coro(coroutine* coro)
 {
-    coroutine *coro = coro_alloc(fn, arg, stacksize);
-    if(coro == nil) {
-        return M_ERR;
-    }
-    coro->sched = g_mastersched;
-	coro_register(coro);
-    coro_ready(coro);
-    return M_OK;
-}
-
-void coro_ready_immediatly(coroutine* coro) 
-{
-    ASSERT(coro->status == M_FREE || coro->status == M_RUN);
-    coro->status = M_READY;
-	insert_head(&coro->sched->wait_sched_queue, coro);
-}
-
-void coro_ready(coroutine* coro)
-{
-    ASSERT(coro->status == M_FREE || coro->status == M_RUN);
-    coro->status = M_READY;
-	insert_tail(&coro->sched->wait_sched_queue, coro);
-}
-
-
-void coro_yield()
-{
-	coro_ready(g_mastersched, g_mastersched->current_coro);
-	coro_switch(g_mastersched->current_coro, g_mastersched->sched_coro);
-}
-
-void coro_exit() 
-{
-	g_mastersched->current_coro->status = M_EXIT;
-	coro_switch(g_mastersched->current_coro, g_mastersched->sched_coro);
-}
-
-rstatus coro_switch_to_parallel(coroutine *c)
-{
-	if(c->parallel_id != M_INVALIED_PARALLEL_ID) {
-		return M_ERR;
-	}	
-	c->parallel_id = M_VALID_PARALLEL_ID;	
-	coro_ready_immediatly(c);
-	coro_yield();
-	return M_OK;
+     if(g_mastersched->nallcoroutines % COROUTINE_SIZE == 0) {        //need expand allcoroutines
+                g_mastersched->allcoroutines = realloc(g_mastersched->allcoroutines, (g_mastersched->nallcoroutines + COROUTINE_SIZE) * sizeof(g_mastersched->allcoroutines));
+        ASSERT(g_mastersched->allcoroutines != nil);
+        }
+        coro->alltaskslot = g_mastersched->nallcoroutines;
+        g_mastersched->allcoroutines[g_mastersched->nallcoroutines++] = coro;
 }
 
 
@@ -98,19 +61,13 @@ void yield_and_scheduler()
 	}	
 }
 
-static void coro_register(coroutine* coro)
-{
-	if(g_mastersched->nallcoroutines % COROUTINE_SIZE == 0) {	//need expand allcoroutines
-		g_mastersched->allcoroutines = realloc(g_mastersched->allcoroutines, (g_mastersched->nallcoroutines + COROUTINE_SIZE) * sizeof(g_mastersched->allcoroutines));
-        ASSERT(g_mastersched->allcoroutines != nil);
-	}
-	coro->alltaskslot = g_mastersched->nallcoroutines;
-	g_mastersched->allcoroutines[g_mastersched->nallcoroutines++] = coro;
-}
+
 
 bool sched_has_task() {
     return !empty(&g_mastersched->wait_sched_queue); 
 }
+
+
 
 static void sched_run(void *arg) 
 {
@@ -121,7 +78,9 @@ static void sched_run(void *arg)
 			break;
 		}
         if(c->parallel_id != M_INVALID_PARALLEL_ID) {   
-		coro_sent_parallel(c);
+		    if(coro_sent_parallel(c) != M_ERR) {
+                coro_ready_immediatly(c);   
+            }
             continue; 
         }
 		c->status = M_RUN;
@@ -138,27 +97,6 @@ static void sched_run(void *arg)
 	}
     log_warn("no tasks, exit scheduler");
 	coro_transfer(&g_mastersched->sched_coro->ctx, &g_mastersched->main_coro);
-}
-
-rstatus_t switchto_parallel_sched(coroutine *c)
-{
-    if(c->parallel_id == M_INVALID_PARALLEL_ID) {
-        c->parallel_id = get_curr_parallelid(); 
-    } 
-    if(!valid_parallelid(c->parallel_id)) {
-        return M_EINVALID_PARALLELID; 
-    }
-    scheduler *parallel_sched = g_parallel_scheds + c->parallel_id;
-    ASSERT(parallel_sched);
-    c->sched = parallel_sched;
-    insert_tail_salf(&parallel_sched->wait_sched_queue, c);
-    return M_OK;
-}
-
-rstatus_t switchto_master_sched(coroutine *c)
-{
-    //todo..
-    return M_OK;
 }
 
 void* parallel_main(void *arg)
@@ -193,27 +131,45 @@ void parallel_sched_run(void *arg)
 }
 rstatus_t env_init() 
 {
-    n_max_procs = cs_get_nprocs();
-    if(n_max_procs <= 0) {
-        return M_ERR; 
-    }
-    g_parallel_scheds = cs_alloc(n_max_procs * sizeof(scheduler)); 
-
     g_mastersched = cs_alloc(sizeof(scheduler)); 
-    if(g_mastersched == nil) {
+    g_parallel_sched = cs_alloc(sizeof(scheduler)); 
+    g_schedulerbackadapter = cs_alloc(sizeof(salfschedulebackadapter));
+
+    if(g_mastersched == nil || g_parallel_sched == nil || g_schedulerbackadapter= nil) {
         log_error("init scheduler malloc fail.");
+        cs_free(g_mastersched);
+        cs_free(g_parallel_sched);
+        cs_free(g_schedulerbackadapter);
         return nil; 
     }
-	g_mastersched->allcoroutines = nil;
-    g_mastersched->nallcoroutines = 0;
-	g_mastersched->stop = 0;
-	g_mastersched->sched_coro = coro_alloc(&sched_proc, nil, DEFAULT_STACK_SIZE);
-	if(g_mastersched->sched_coro == nil || g_mastersched->sched_coro->cid != SCHED_CORO_ID) {
-        log_error("init scheduler alloc sched_coro fail");
-		return nil;
-	}
-	g_mastersched->current_coro = nil;
-    TAILQ_INIT(&g_mastersched->wait_sched_queue);
+    {
+        g_mastersched->allcoroutines = nil;
+        g_mastersched->nallcoroutines = 0;
+        g_mastersched->stop = 0;
+        g_mastersched->sched_coro = coro_alloc(&sched_proc, nil, DEFAULT_STACK_SIZE);
+        if(g_mastersched->sched_coro == nil || g_mastersched->sched_coro->cid != SCHED_CORO_ID) {
+            log_error("init scheduler alloc sched_coro fail");
+            return nil;
+        }
+        g_mastersched->current_coro = nil;
+        TAILQ_INIT(&g_mastersched->wait_sched_queue);
+    }
+
+    {
+        g_parallel_sched->stop = 0;
+        g_parallel_sched->sched_coro = coro_alloc(&parallel_sched_run, g_parallel_sched, DEFAULT_STACK_SIZE);
+        g_parallel_sched->current_coro = nil;
+        TAILQ_INIT(&g_parallel_sched->wait_sched_queue);
+    }
+
+    {
+        int fd[2];
+        socketpair(AF_UNIX, SOCK_STREAM, 0, fd);
+        g_schedulerbackadapter->scbd_coro = coro_alloc(&scheduleback_run, nil, DEFAULT_STACK_SIZE);
+        g_schedulerbackadapter->readfd = fd[0];
+        g_schedulerbackadapter->writefd = fd[1];
+    }
+
 	return M_OK;
 }
 
