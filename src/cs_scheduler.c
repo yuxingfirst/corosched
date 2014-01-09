@@ -23,14 +23,12 @@ struct salfschedulerbackadapter *g_schedulebackadapter;
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static struct rbtree coroutine_rbt; /*coroutine rbtree*/
+static struct rbnode coroutine_rbs; /*coroutine rbtree sentinel*/
+
 void sched_register_coro(coroutine* coro)
 {
-     if(g_mastersched->nallcoroutines % COROUTINE_SIZE == 0) {        //need expand allcoroutines
-                g_mastersched->allcoroutines = realloc(g_mastersched->allcoroutines, (g_mastersched->nallcoroutines + COROUTINE_SIZE) * sizeof(g_mastersched->allcoroutines));
-        ASSERT(g_mastersched->allcoroutines != nil);
-        }
-        coro->alltaskslot = g_mastersched->nallcoroutines;
-        g_mastersched->allcoroutines[g_mastersched->nallcoroutines++] = coro;
+     rbtree_insert(&coroutine_rbt, &coro-node);
 }
 
 coroutine* sched_get_coro(coroid_t pid)
@@ -184,8 +182,6 @@ rstatus_t env_init()
         return rs; 
     }
     {
-        g_mastersched->allcoroutines = nil;
-        g_mastersched->nallcoroutines = 0;
         g_mastersched->stop = 0;
         g_mastersched->sched_coro = coro_alloc(&sched_proc, nil, DEFAULT_STACK_SIZE);
         if(g_mastersched->sched_coro == nil || g_mastersched->sched_coro->cid != SCHED_CORO_ID) {
@@ -197,7 +193,6 @@ rstatus_t env_init()
     }
 
     {
-
         g_parallel_sched->stop = 0;
         g_parallel_sched->sched_coro = coro_alloc(&parallel_run, nil, DEFAULT_STACK_SIZE);
         g_parallel_sched->current_coro = nil;
@@ -211,6 +206,9 @@ rstatus_t env_init()
         g_schedulebackadapter->readfd = fd[0];
         g_schedulebackadapter->writefd = fd[1];
     }
+
+    rbtree_init(coroutine_rbt, coroutine_rbs);
+
     rs = M_OK;
     rs = eventmgr_init(g_eventmgr);
 	return rs;

@@ -28,8 +28,6 @@
 struct scheduler 
 {
     coro_context main_coro;
-    coroutine **allcoroutines; 
-    int nallcoroutines;
     int stop;
     coroutine *sched_coro; 
     coroutine *current_coro; 

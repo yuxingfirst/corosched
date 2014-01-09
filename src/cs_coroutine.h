@@ -29,6 +29,7 @@ struct coroutine
 	cstatus_t 					status;	
     scheduler                   *sched;   //my scheduler
     bool              need_parallel;
+	struct rbnode	node;
 };
 
 rstatus_t coro_spawn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t stacksize);

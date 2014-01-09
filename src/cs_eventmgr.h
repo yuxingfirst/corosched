@@ -1,6 +1,6 @@
 /*
  * coro_sched - A mini coroutine schedule framework
- * Copyright (C) 2014 xiongj(shervalx@gmail.com).
+ * Copyright (C) 2014 xiongj(yuxingfirst@gmail.com).
  * 
  * the eventmanager implement a event driver lib based on epoll,
  * so we should build the coro_sched since linux 2.6+.

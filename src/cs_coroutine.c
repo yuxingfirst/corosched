@@ -26,6 +26,10 @@ rstatus_t coro_spawn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t 
     if(coro == nil) {
         return M_ERR;
     }
+	coro->cid = (coroid_t)coro;
+
+    coro->node.
+
     coro->status = M_FREE;
     coro->sched = sched;
     sched_register_coro(sched, coro);

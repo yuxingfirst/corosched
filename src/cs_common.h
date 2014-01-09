@@ -22,6 +22,7 @@
 #include "cs_coro.h"
 #include "cs_log.h"
 #include "cs_util.h"
+#include "cs_rbtree.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -55,7 +56,7 @@
 
 typedef long msg_seqid_t;
 
-typedef int coroid_t;
+typedef intptr_t coroid_t;
 typedef int rstatus_t;
 typedef int cstatus_t;
 
