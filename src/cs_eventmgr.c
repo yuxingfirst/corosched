@@ -105,7 +105,7 @@ static void event_loop(void *arg)
                 break;
             }
 
-            coro_yield();
+            sched_run_once();
         }   
         nsd = epoll_wait(eventmgr->epfd, eventmgr->events, eventmgr->nevent, eventmgr->max_timeout);
         if(nsd < 0) {

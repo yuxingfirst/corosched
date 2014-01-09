@@ -138,13 +138,13 @@ static void scheduleback_run(void *arg)
 rstatus_t env_init() 
 {
     g_mastersched = cs_alloc(sizeof(scheduler)); 
-    g_parallel_sched = cs_alloc(sizeof(scheduler)); 
+    g_parallelsched = cs_alloc(sizeof(scheduler)); 
     g_schedulebackadapter = cs_alloc(sizeof(salfschedulebackadapter));
 
-    if(g_mastersched == nil || g_parallel_sched == nil || g_schedulebackadapter= nil) {
+    if(g_mastersched == nil || g_parallelsched == nil || g_schedulebackadapter= nil) {
         log_error("init scheduler malloc fail.");
         cs_free(g_mastersched);
-        cs_free(g_parallel_sched);
+        cs_free(g_parallelsched);
         cs_free(g_schedulebackadapter);
         return nil; 
     }
@@ -162,10 +162,10 @@ rstatus_t env_init()
     }
 
     {
-        g_parallel_sched->stop = 0;
-        g_parallel_sched->sched_coro = coro_alloc(&parallel_sched_run, g_parallel_sched, DEFAULT_STACK_SIZE);
-        g_parallel_sched->current_coro = nil;
-        TAILQ_INIT(&g_parallel_sched->wait_sched_queue);
+        g_parallelsched->stop = 0;
+        g_parallelsched->sched_coro = coro_alloc(&parallel_sched_run, g_parallelsched, DEFAULT_STACK_SIZE);
+        g_parallelsched->current_coro = nil;
+        TAILQ_INIT(&g_parallelsched->wait_sched_queue);
     }
 
     {
