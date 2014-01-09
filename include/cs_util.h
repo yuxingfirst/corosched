@@ -1,3 +1,37 @@
+/*
+ * coro_sched - A mini coroutine schedule framework
+ * Copyright (C) 2014 yuxingfirst@gmail.com.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
+
+/*
+ * twemproxy - A fast and lightweight proxy for memcached protocol.
+ * Copyright (C) 2011 Twitter, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #ifndef _CS_UTIL_H_
 #define _CS_UTIL_H_
 
@@ -8,6 +42,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <sys/sysinfo.h>
 
 #include "cs_string.h"
 
@@ -137,6 +172,12 @@ void _cs_free(void *ptr, const char *name, int line);
 
 #define cs_writev(_d, _b, _n)   \
     writev(_d, _b, (int)(_n))
+
+/*
+ * Wrappers to get machine info.
+ */
+#define cs_get_nprocs()         \
+    get_nprocs()
 
 ssize_t _cs_sendn(int sd, const void *vptr, size_t n);
 ssize_t _cs_recvn(int sd, void *vptr, size_t n);

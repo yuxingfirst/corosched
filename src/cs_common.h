@@ -36,8 +36,11 @@
 #include <unistd.h>
 #include <errno.h>
 #include <error.h>
-#include <sys/stat.h>
 #include <pthread.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/epoll.h>
 
 #define nil ((void*)0)
 
@@ -51,8 +54,7 @@
 #define M_RUN 3
 #define M_EXIT 4
 
-#define M_COROUTINE_SIZE 64
-#define M_SCHED_CORO_ID 0
+#define M_EVENT_SIZE_HINT 1024
 
 typedef long msg_seqid_t;
 

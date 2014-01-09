@@ -22,7 +22,6 @@
 #define _CS_EVENTMGR_H_ 1
 
 #include "cs_common.h"
-#include <sys/epoll.h>
 
 typedef struct event {
 	uint32_t mask;
@@ -40,11 +39,11 @@ struct eventmanager {
 	int stop;
 };
 
-rstatus eventmgr_init(eventmanager *eventmgr);
+rstatus_t eventmgr_init(eventmanager *eventmgr, int nevents);
 void register_event(eventmanager *eventmgr, event *ev);
 void remove_event(eventmanager *eventmgr, event *ev);
 
 static void event_loop(void *arg);
-static void event_callback(const struct *events, int nevent);
+static void event_callback(struct event *ev, int events);
 
 #endif	//_CS_EVENTMGR_H_

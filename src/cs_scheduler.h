@@ -33,7 +33,7 @@ struct scheduler
     coroutine *current_coro; 
     coro_tqh wait_sched_queue;
     bool is_parallel_sched;
-}scheduler;
+};
 
 void sched_register_coro(coroutine* coro);
 coroutine* sched_get_coro(coroid_t pid);
@@ -44,12 +44,12 @@ static void sched_run(void *arg);
 void* parallel_main(void *arg);
 static void parallel_run(void *arg);
 
-struct salfschedulebackadapters
+struct salfschedulebackadapter
 {
     coroutine *scbd_coro; 
    	int readfd;
    	int writefd; 
-}salfschedulebackadapter;
+};
 
 static void scheduleback_run(void *arg);
 

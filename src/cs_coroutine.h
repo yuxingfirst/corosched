@@ -25,7 +25,7 @@ struct coroutine
 	TAILQ_ENTRY(coroutine)     	ws_tqe;    /* link in sheduler wait_shed_queue */
 	coroid_t        			cid;
 	coro_context    			ctx;
-	int	            			alltaskslot;
+//	int	            			alltaskslot;
 	cstatus_t 					status;	
     scheduler                   *sched;   //my scheduler
     bool              need_parallel;
@@ -33,9 +33,9 @@ struct coroutine
 };
 
 rstatus_t coro_spawn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t stacksize);
-rstatus coro_switch_to_master(coroutine *c);
-rstatus coro_switch_to_parallel(coroutine *c);
-rstatus coro_sent_parallel(coroutine *c);
+rstatus_t coro_switch_to_master(coroutine *c);
+rstatus_t coro_switch_to_parallel(coroutine *c);
+rstatus_t coro_sent_parallel(coroutine *c);
 
 void coro_ready(coroutine* coro);
 void coro_ready_immediatly(coroutine* coro);

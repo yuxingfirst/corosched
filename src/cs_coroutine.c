@@ -18,8 +18,6 @@
 #include "cs_coroutine.h"
  #include "cs_scheduler.h"
 
-static coroid_t coroidgen = M_SCHED_CORO_ID + 1;
-
 rstatus_t coro_spawn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t stacksize)
 {
     coroutine *coro = coro_alloc(fn, arg, stacksize);
@@ -27,19 +25,19 @@ rstatus_t coro_spawn(scheduler *sched, void (*fn)(void *arg), void *arg, size_t 
         return M_ERR;
     }
 	coro->cid = (coroid_t)coro;
-
-    coro->node.
-
+    coro->node.key = (int64_t)coro->cid;
+    coro->node.data = (void*)coro;
     coro->status = M_FREE;
     coro->sched = sched;
-    sched_register_coro(sched, coro);
+    sched_register_coro(coro);
     coro_ready(coro);
     return M_OK;
 }
 
 void coro_ready(coroutine* coro)
 {
-    ASSERT(coro->status == M_FREE || coro->status == M_RUN);
+    //ASSERT(coro->status == M_FREE || coro->status == M_RUN);
+    ASSERT(coro->status != M_EXIT);
     coro->status = M_READY;
     insert_tail(&coro->sched->wait_sched_queue, coro);
 }
@@ -67,12 +65,12 @@ void coro_yield(coroutine *co)
     coro_switch(co->sched->current_coro, co->sched->sched_coro);
 }
 
-rstatus coro_switch_to_master(coroutine *c)
+rstatus_t coro_switch_to_master(coroutine *c)
 {
     ASSERT(c != nil);
     while(true) {
         c->sched = g_mastersched;
-        ssize n = send(g_schedulerbackadapter->writefd, (const void*)c, sizeof(struct coroutine*), MSG_DONTWAIT);
+        ssize_t n = send(g_schedulebackadapter->writefd, (const void*)c, sizeof(struct coroutine*), MSG_DONTWAIT);
         if(n == -1 && errno == EINTR) {
             continue;
         }        
@@ -84,7 +82,7 @@ rstatus coro_switch_to_master(coroutine *c)
     }
 }
 
-rstatus coro_switch_to_parallel(coroutine *co)
+rstatus_t coro_switch_to_parallel(coroutine *co)
 {
     ASSERT(co);
     if(!co->need_parallel) {
@@ -95,7 +93,7 @@ rstatus coro_switch_to_parallel(coroutine *co)
     return M_OK;
 }
 
-rstatus coro_sent_parallel(coroutine *c)
+rstatus_t coro_sent_parallel(coroutine *c)
 {
     ASSERT(c);
     ASSERT(c->need_parallel);
@@ -130,7 +128,7 @@ coroutine* coro_alloc(void (*fn)(void*), void *arg, size_t stack)
         return nil;
     } 
     memset(co, 0, sizeof(coroutine));
-    co->cid = coroidgen++;
+    //co->cid = coroidgen++;
     void* stk = (void*)(co + 1);   
     coro_create(&co->ctx, fn, arg, stk, stack);
     co->status = M_FREE;

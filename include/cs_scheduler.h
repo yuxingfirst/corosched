@@ -1,3 +1,20 @@
+/*
+ * coro_sched - A mini coroutine schedule framework
+ * Copyright (C) 2014 yuxingfirst@gmail.com.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
+
 #ifndef _SHEDULER_H_
 #define _SHEDULER_H_ 1
 
@@ -8,53 +25,42 @@
  * the sheduler manager all the active coroutines
 */
 
-enum 
-{
-    DEFAULT_STACK_SIZE = 8192
-};
-
-typedef struct scheduler scheduler;
 struct scheduler 
 {
     coro_context main_coro;
-    coroutine **allcoroutines; 
-    int nallcoroutines;
     int stop;
     coroutine *sched_coro; 
     coroutine *current_coro; 
     coro_tqh wait_sched_queue;
+    bool is_parallel_sched;
 };
 
-/*
-   *  Give up the cpu temporarily and wait reschedule later
-   */
-void coro_yield(scheduler* sched);
+void sched_register_coro(coroutine* coro);
+coroutine* sched_get_coro(coroid_t pid);
+void sched_run_once();
+bool sched_has_task();
+static void sched_run(void *arg);
 
-void coro_ready(scheduler* sched, coroutine* coro);
+void* parallel_main(void *arg);
+static void parallel_run(void *arg);
 
-/*
-  *  Current coro exit from the scheduler and main coro take charge of execute
-  */
-void coro_exit(scheduler* sched);
+struct salfschedulebackadapter
+{
+    coroutine *scbd_coro; 
+   	int readfd;
+   	int writefd; 
+};
 
-/*
-  * Create a coroutine and add to schedule queue
-  */
-rstatus_t coro_spawn(scheduler *shed, void (*fn)(void *arg), void *arg, size_t stacksize);
+static void scheduleback_run(void *arg);
 
-static void coro_register(scheduler* sched, coroutine* coro);
+rstatus_t env_init();
+rstatus_t env_run();
+void env_stop();
 
-scheduler* sched_init();
-rstatus_t sched_run(scheduler* sched);
-void sched_stop(scheduler* sched);
-static void sched_proc(void *arg);
-
-coroutine* get_coro(scheduler* sched, coroid_t pid);
-
-static void insert_tail(coro_tqh *queue, coroutine* coro);
-static void insert_head(coro_tqh *queue, coroutine* coro);
-static int  empty(coro_tqh *queue);
-static coroutine* pop(coro_tqh *queue);
+ void insert_tail(coro_tqh *queue, coroutine* coro);
+ void insert_head(coro_tqh *queue, coroutine* coro);
+ bool empty(coro_tqh *queue);
+ coroutine* pop(coro_tqh *queue);
 
 #endif 
 

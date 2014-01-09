@@ -19,7 +19,9 @@
 #include "cs_coroutine.h"
 #include "cs_scheduler.h"
 
-rstatus eventmgr_init(eventmanager* eventmgr, int nevents) 
+ struct eventmanager *g_eventmgr;
+
+rstatus_t eventmgr_init(eventmanager* eventmgr, int nevents) 
 {
     eventmgr = cs_alloc(sizeof(eventmanager));
     if(eventmgr == nil) {
@@ -31,7 +33,7 @@ rstatus eventmgr_init(eventmanager* eventmgr, int nevents)
         return M_ERR;
     }
     eventmgr->nevent = nevents;
-    eventmgr->events = cs_clloc(eventmgr->nevent, sizeof(*eventmgr->events));
+    eventmgr->events = cs_calloc(eventmgr->nevent, sizeof(*eventmgr->events));
     if(eventmgr->events == nil) {
         cs_free(eventmgr);
         return M_ERR;
@@ -64,12 +66,12 @@ void register_event(eventmanager *eventmgr, event *ev)
     ev->events = events;
 
     struct epoll_event epevent;
-    evevent.events = events;
+    epevent.events = events;
     epevent.data.ptr = ev;
 
     epoll_ctl(eventmgr->epfd, EPOLL_CTL_ADD, ev->sockfd, &epevent); 
 
-    coro_yield(); 
+    coro_yield(ev->coro); 
 }
 
 void remove_event(eventmanager *eventmgr, event *ev)
@@ -78,18 +80,16 @@ void remove_event(eventmanager *eventmgr, event *ev)
     epoll_ctl(eventmgr->epfd, EPOLL_CTL_DEL, ev->sockfd, &ignored);    
 }
 
-static void event_callback(const struct *events, int nevent) 
+static void event_callback(struct event *ev, int events) 
 {
-    int i;
-    if(nevent <= 0) {
-        return; 
+    if(events & ReadMask) {
+        ev->events |= ReadMask; 
     }
-    for(i=0; i<nevent; ++i) {
-        const struct *event = &events[i]; 
-        coroutine *co = event->coro;
-        coro_ready(co); 
-        //...
+    if(events & WriteMask) {
+        ev->events |= WriteMask; 
     }
+    coro_ready(ev->coro);
+    sched_run_once();
 }
 
 static void event_loop(void *arg) 
@@ -97,13 +97,18 @@ static void event_loop(void *arg)
     eventmanager *eventmgr = (eventmanager*)arg;
     ASSERT(eventmgr);
     int nsd;
-    while(!stop) {
+    while(!eventmgr->stop) {
         if(sched_has_task()) {
             nsd = epoll_wait(eventmgr->epfd, eventmgr->events, eventmgr->nevent, 0);
             if(nsd < 0) {
                 log_error("epoll_wait occur error, errno:%d", errno); 
                 break;
             }
+            int i; 
+            for(i=0;i<nsd;i++) {
+                struct epoll_event *epev = &eventmgr->events[i];      
+                event_callback(epev->data.ptr, epev->events);
+            } 
 
             sched_run_once();
         }   

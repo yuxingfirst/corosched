@@ -16,10 +16,11 @@
 */
 
 #include "cs_scheduler.h"
+#include "cs_eventmgr.h"
 
 struct scheduler *g_mastersched;
 struct scheduler *g_parallelsched;
-struct salfschedulerbackadapter *g_schedulebackadapter;
+struct salfschedulebackadapter *g_schedulebackadapter;
 
 pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -28,12 +29,16 @@ static struct rbnode coroutine_rbs; /*coroutine rbtree sentinel*/
 
 void sched_register_coro(coroutine* coro)
 {
-     rbtree_insert(&coroutine_rbt, &coro-node);
+     rbtree_insert(&coroutine_rbt, &coro->node);
 }
 
 coroutine* sched_get_coro(coroid_t pid)
 {
-    return nil; 
+    struct rbnode *value = rbtree_lookup(&coroutine_rbt, pid);; 
+    if(value == nil) {
+        return nil; 
+    } 
+    return value->data;
 }
 
 void sched_run_once()
@@ -75,7 +80,7 @@ static void sched_run(void *arg)
 		if(c == nil) {
 			break;
 		}
-        if(c->parallel_id != M_INVALID_PARALLEL_ID) {   
+        if(c->need_parallel) {   
 		    if(coro_sent_parallel(c) != M_ERR) {
                 coro_ready_immediatly(c);   
             }
@@ -87,9 +92,7 @@ static void sched_run(void *arg)
 		//ASSERT(c == g_mastersched->current_coro);
 		g_mastersched->current_coro = nil;
 		if(c->status == M_EXIT) {	//need free
-			i = c->alltaskslot;
-			g_mastersched->allcoroutines[i] = g_mastersched->allcoroutines[--g_mastersched->nallcoroutines];
-			g_mastersched->allcoroutines[i]->alltaskslot = i;
+            rbtree_delete(&coroutine_rbt, &c->node);  
 			coro_dealloc(c);
 		}
 	}
@@ -101,9 +104,9 @@ void* parallel_main(void *arg)
 {
     scheduler *psched = (scheduler*)arg;
     ASSERT(psched != nil);
-    pthread_lock(&g_mutex);
-    log_info("...parallel environment start...");
-    pthread_unlock(&g_mutex);
+    pthread_mutex_lock(&g_mutex);
+    log(LOG_INFO, "...parallel environment start...");
+    pthread_mutex_unlock(&g_mutex);
     coro_transfer(&psched->main_coro, &psched->sched_coro->ctx);
     return NULL;
 }
@@ -111,7 +114,7 @@ void* parallel_main(void *arg)
 static void parallel_run(void *arg)
 {
     coroutine *co = nil;
-    while(!psched->stop) {
+    while(!g_parallelsched->stop) {
         if(pthread_mutex_trylock(&g_mutex) == 0) { 
             if(empty(&g_parallelsched->wait_sched_queue)) {
                 usleep(1000 * 10);
@@ -126,10 +129,10 @@ static void parallel_run(void *arg)
         coro_switch(g_parallelsched->sched_coro, co);
         rstatus_t rs = coro_switch_to_master(co);
         if(rs != M_OK) {
-            log_error("switch back to master sched fail, coro->id:%d, sched->parallelnum:%d", co->cid, psched->parallelnum); 
+            log_error("switch back to master sched fail, coro->id:%ld", co->cid); 
         }
     }
-    coro_transfer(&psched->sched_coro->ctx, &psched->main_coro);
+    coro_transfer(&g_parallelsched->sched_coro->ctx, &g_parallelsched->main_coro);
 }
 
 static void scheduleback_run(void *arg)
@@ -138,14 +141,14 @@ static void scheduleback_run(void *arg)
         uint32_t mask = ReadMask;
         event ev; 
         ev.mask = ReadMask;
-        ev.readfd = g_schedulebackadapter->readfd;
+        ev.sockfd = g_schedulebackadapter->readfd;
         ev.events = -1;
         ev.coro = g_schedulebackadapter->scbd_coro;
         register_event(g_eventmgr, &ev);
         remove_event(g_eventmgr, &ev);
         coroutine *c = nil;
         while(true) {
-            ssize_t n = recv(ev.readfd, (void*)&c, sizeof(struct coroutine*), MSG_DONTWAIT);
+            ssize_t n = recv(ev.sockfd, (void*)&c, sizeof(struct coroutine*), MSG_DONTWAIT);
             if(n == sizeof(struct coroutine*)) {
                 break;
             }
@@ -174,7 +177,7 @@ rstatus_t env_init()
     g_parallelsched = cs_alloc(sizeof(scheduler)); 
     g_schedulebackadapter = cs_alloc(sizeof(salfschedulebackadapter));
 
-    if(g_mastersched == nil || g_parallelsched == nil || g_schedulebackadapter= nil) {
+    if(g_mastersched == nil || g_parallelsched == nil || g_schedulebackadapter == nil) {
         log_error("init scheduler malloc fail.");
         //cs_free(g_mastersched);
         //cs_free(g_parallel_sched);
@@ -183,8 +186,8 @@ rstatus_t env_init()
     }
     {
         g_mastersched->stop = 0;
-        g_mastersched->sched_coro = coro_alloc(&sched_proc, nil, DEFAULT_STACK_SIZE);
-        if(g_mastersched->sched_coro == nil || g_mastersched->sched_coro->cid != SCHED_CORO_ID) {
+        g_mastersched->sched_coro = coro_alloc(&sched_run, nil, DEFAULT_STACK_SIZE);
+        if(g_mastersched->sched_coro == nil) {
             log_error("init scheduler alloc sched_coro fail");
             return rs;
         }
@@ -193,10 +196,10 @@ rstatus_t env_init()
     }
 
     {
-        g_parallel_sched->stop = 0;
-        g_parallel_sched->sched_coro = coro_alloc(&parallel_run, nil, DEFAULT_STACK_SIZE);
-        g_parallel_sched->current_coro = nil;
-        TAILQ_INIT(&g_parallel_sched->wait_sched_queue);
+        g_parallelsched->stop = 0;
+        g_parallelsched->sched_coro = coro_alloc(&parallel_run, nil, DEFAULT_STACK_SIZE);
+        g_parallelsched->current_coro = nil;
+        TAILQ_INIT(&g_parallelsched->wait_sched_queue);
     }
 
     {
@@ -207,26 +210,26 @@ rstatus_t env_init()
         g_schedulebackadapter->writefd = fd[1];
     }
 
-    rbtree_init(coroutine_rbt, coroutine_rbs);
+    rbtree_init(&coroutine_rbt, &coroutine_rbs);
 
     rs = M_OK;
-    rs = eventmgr_init(g_eventmgr);
+    rs = eventmgr_init(g_eventmgr, M_EVENT_SIZE_HINT);
 	return rs;
 }
 
 rstatus_t env_run() 
 {
-	ASSERT(g_mastersched != nil && g_parallel_sched != nil);
+	ASSERT(g_mastersched != nil && g_parallelsched != nil);
 
     pthread_t parallel_thread_id;
-    if( pthread_create(&parallel_thread_id, &parallel_main, nil, g_parallel_sched) != 0) {
+    if( pthread_create(&parallel_thread_id, nil, &parallel_main, g_parallelsched) != 0) {
         log_error("env_run create thread fail, errno:%d", errno);
         return M_ERR;
     }
-    pthread_lock(&g_mutex);
-    log_info("env_run create thread succ, threadid:%lu", parallel_thread_id);
-    log_info("...master environment start...");
-    pthread_unlock(&g_mutex);
+    pthread_mutex_lock(&g_mutex);
+    log(LOG_INFO, "env_run create thread succ, threadid:%lu", parallel_thread_id);
+    log(LOG_INFO, "...master environment start...");
+    pthread_mutex_unlock(&g_mutex);
 	coro_transfer(&g_mastersched->main_coro, &g_mastersched->sched_coro->ctx);
 	return M_OK;
 }
@@ -238,22 +241,22 @@ void env_stop()
     g_eventmgr->stop = 1; 
 }
 
-static void insert_tail(coro_tqh *queue, coroutine* coro)
+void insert_tail(coro_tqh *queue, coroutine* coro)
 {
 	TAILQ_INSERT_TAIL(queue, coro, ws_tqe);
 }
 
-static void insert_head(coro_tqh *queue, coroutine* coro)
+void insert_head(coro_tqh *queue, coroutine* coro)
 {
 	TAILQ_INSERT_HEAD(queue, coro, ws_tqe);
 }
 
-static bool empty(coro_tqh *queue) 
+bool empty(coro_tqh *queue) 
 {
 	return TAILQ_EMPTY(queue);
 }
 
-static coroutine* pop(coro_tqh *queue) 
+coroutine* pop(coro_tqh *queue) 
 {
 	coroutine *head = TAILQ_FIRST(queue);
 	if(head == nil) {

@@ -12,5 +12,5 @@ ADD_LIBRARY(corosched_s STATIC ${DIR_SRCS})
 ADD_LIBRARY(corosched SHARED ${DIR_SRCS})
 SET_TARGET_PROPERTIES(corosched PROPERTIES VERSION 1.2 SOVERSION 1)
 INSTALL(TARGETS corosched corosched_s LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
-INSTALL(FILES cs_message.h cs_common.h cs_coro.h cs_coroutine.h cs_log.h cs_queue.h cs_scheduler.h cs_string.h cs_util.h DESTINATION include)
+INSTALL(FILES cs_common.h cs_coro.h cs_coroutine.h cs_log.h cs_queue.h cs_scheduler.h cs_string.h cs_util.h cs_rbtree.h DESTINATION include)
 
