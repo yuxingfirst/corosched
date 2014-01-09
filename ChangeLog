@@ -1,0 +1,29 @@
+
+2014.01.09 xiongj (yuxingfirst@gmail.com)
+	* coro_sched: version 0.9
+	从master scheduler剥离协程的管理, 采用红黑树管理, 便于查找
+	成功编译整个框架代码，并做简单基准测试。
+
+2014.01.07 ~ 2014.01.08 xiongj (yuxingfirst@gmail.com)
+	* coro_sched: version 模糊版本
+	整体框架api重新设计，模块化
+	eventmanager实现
+	协程多线程切换即运行实现
+
+2014.01.06 xiongj (yuxingfirst@gmail.com)
+	* coro_sched: version 0.4
+	着手实现eventmanager
+
+2014.01.05 xiongj (yuxingfirst@gmail.com)
+	* coro_sched:   version 0.3
+	协程多线程调度测试; 开始给框架加入多线程切换支持
+
+2014.01.04 xiongj (yuxingfirst@gmail.com)
+	* coro_sched:   version 0.2
+	增加CMAKE编译文件
+	增加日志组件并修改日志输出格式
+	探索协程在多个线程中的方案及原理，并编码测试
+
+2014.01.03 xiongj (yuxingfirst@gmail.com) 
+	* coro_sched:   version 0.1
+	大致完成了协程的调度及切换,benchmark测试是libtask调度效率的8~10倍
