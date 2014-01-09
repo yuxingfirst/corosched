@@ -80,8 +80,8 @@ enum
 
 enum
 {
-    ReadMask = 0x1;
-    WriteMask = 0x2;
+    ReadMask = 0x1,
+    WriteMask = 0x2
 };
 
 #endif  //_COMMON_H_

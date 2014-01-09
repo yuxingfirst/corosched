@@ -67,11 +67,13 @@ rstatus coro_switch_to_master(coroutine *c)
 {
     ASSERT(c != nil);
     while(true) {
-        ssize n = send(g_schedulerbackadapter->writefd, (const void*)c, sizeof(struct coroutine), MSG_DONTWAIT);
+        c->sched = g_mastersched;
+        ssize n = send(g_schedulerbackadapter->writefd, (const void*)c, sizeof(struct coroutine*), MSG_DONTWAIT);
         if(n == -1 && errno == EINTR) {
             continue;
         }        
         if(n != sizeof(struct coroutine)) {
+            c->sched = g_parallelsched;
             return M_ERR;
         }
         return M_OK;
@@ -93,12 +95,13 @@ rstatus coro_sent_parallel(coroutine *c)
 {
     ASSERT(c);
     ASSERT(c->need_parallel);
-
     if(pthread_mutex_trylock(&g_mutex) == 0) {
+        c->sched = g_parallelsched;
         insert_head(&c->sched->wait_sched_queue, c);
         pthread_mutex_unlock(&g_mutex); 
         return M_OK;
     }
+    c->sched = g_mastersched;
     return M_ERR; 
 }
 
