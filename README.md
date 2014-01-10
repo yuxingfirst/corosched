@@ -20,3 +20,7 @@ message, 协程之间采用消息通信机制,类似于Erlang, 区别于Golang�
 eventmanager  基于epoll实现事件驱动机制。  
 因为整个框架主要是用于网络I/O, 所以实际上整个框架是受事件驱动的。当有事件(读、写、超时事件)发生时，才会spawn出协程，此时eventmanager会驱动mastersched运行。
 
+###NEXT
+
+1. 协程之间消息通信  
+2. 针对协程封装一层socket操作
