@@ -1,6 +1,6 @@
 /*
  * coro_sched - A mini coroutine schedule framework
- * Copyright (C) 2014 yuxingfirst@gmail.com.
+ * Copyright (C) 2014 xiongj(yuxingfirst@gmail.com).
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-
-/*
- * twemproxy - A fast and lightweight proxy for memcached protocol.
- * Copyright (C) 2011 Twitter, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 /*
  * Copyright (c) 1991, 1993
@@ -64,10 +47,8 @@
  * $FreeBSD: src/sys/sys/queue.h,v 1.73 2010/02/20 01:05:30 emaste Exp $
  */
 
-#ifndef _NC_QUEUE_H_
-#define _NC_QUEUE_H_
-
-//#include <nc_log.h>
+#ifndef _CS_QUEUE_H_
+#define _CS_QUEUE_H_
 
 #define __offsetof(type, field) ((size_t)(&((type *)NULL)->field))
 

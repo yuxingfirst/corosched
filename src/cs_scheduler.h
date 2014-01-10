@@ -1,6 +1,6 @@
 /*
  * coro_sched - A mini coroutine schedule framework
- * Copyright (C) 2014 yuxingfirst@gmail.com.
+ * Copyright (C) 2014 xiongj(yuxingfirst@gmail.com).
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

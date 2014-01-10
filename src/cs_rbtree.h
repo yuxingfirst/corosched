@@ -1,7 +1,7 @@
 /*
- * twemproxy - A fast and lightweight proxy for memcached protocol.
- * Copyright (C) 2011 Twitter, Inc.
- *
+ * coro_sched - A mini coroutine schedule framework
+ * Copyright (C) 2014 xiongj(yuxingfirst@gmail.com).
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,7 +13,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+*/
+
+/*
+ * this rbtree use the code from twemproxy(https://github.com/twitter/twemproxy),
+ * I add the rbtree_lookup function.
+*/
 
 #ifndef _CS_RBTREE_
 #define _CS_RBTREE_
