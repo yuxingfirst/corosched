@@ -1,4 +1,8 @@
 
+2014.01.10 xiongj (yuxingfirst@gmail.com)
+	* coro_sched: version 0.9
+	修改项目license
+
 2014.01.09 xiongj (yuxingfirst@gmail.com)
 	* coro_sched: version 0.9
 	从master scheduler剥离协程的管理, 采用红黑树管理, 便于查找
